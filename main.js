@@ -23,6 +23,9 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    titleBarStyle: 'hidden',
+    trafficLightPosition: { x: 15, y: 15 },
+    icon: path.join(__dirname, 'icon.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -30,6 +33,10 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
+
+  if (process.platform === 'darwin') {
+    app.dock.setIcon(path.join(__dirname, 'icon.png'));
+  }
 
   const isDev = !app.isPackaged;
 

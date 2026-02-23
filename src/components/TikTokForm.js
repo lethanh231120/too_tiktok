@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CheckCircle2, Link2 } from 'lucide-react';
 import '../styles/TikTokForm.css';
 
 function TikTokForm({ onDataExtracted, setIsLoading, isLoading, addProgress }) {
@@ -72,9 +73,9 @@ function TikTokForm({ onDataExtracted, setIsLoading, isLoading, addProgress }) {
       <div className="info-section">
         <h3>Tính năng:</h3>
         <ul>
-          <li>Trích xuất tiêu đề và mô tả video</li>
-          <li>Tải ảnh bìa/thumbnail</li>
-          <li>Phân tích cấu trúc nội dung</li>
+          <li><CheckCircle2 size={16} /> Trích xuất tiêu đề và mô tả video</li>
+          <li><CheckCircle2 size={16} /> Tải ảnh bìa/thumbnail</li>
+          <li><CheckCircle2 size={16} /> Phân tích cấu trúc nội dung</li>
         </ul>
       </div>
     </div>

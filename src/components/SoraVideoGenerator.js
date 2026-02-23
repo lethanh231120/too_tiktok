@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ArrowLeft, Video, Key, X, Zap, Sparkles, RefreshCw } from 'lucide-react';
 import '../styles/SoraVideoGenerator.css';
 
 function SoraVideoGenerator({
@@ -94,7 +95,9 @@ function SoraVideoGenerator({
   return (
     <div className="sora-video-generator">
       <div className="header">
-        <button className="back-btn" onClick={onBack}>← Quay lại</button>
+        <button className="back-btn" onClick={onBack}>
+          <ArrowLeft size={18} /> Quay lại
+        </button>
         <h2>Tạo Video bằng Sora</h2>
       </div>
 
@@ -156,7 +159,7 @@ function SoraVideoGenerator({
               disabled={isGeneratingPrompt}
               className="generate-prompt-btn"
             >
-              {isGeneratingPrompt ? '⏳ Đang tạo...' : '✨ Tạo Smart Prompt'}
+              {isGeneratingPrompt ? '⏳ Đang tạo...' : <><Sparkles size={18} /> Tạo Smart Prompt</>}
             </button>
           ) : (
             <>
@@ -171,7 +174,7 @@ function SoraVideoGenerator({
                 disabled={isGeneratingPrompt || isLoading}
                 className="regenerate-prompt-btn"
               >
-                🔄 Tạo lại prompt
+                <RefreshCw size={16} /> Tạo lại prompt
               </button>
             </>
           )}
@@ -190,7 +193,7 @@ function SoraVideoGenerator({
             disabled={isLoading || !soraPrompt}
             className="create-video-btn"
           >
-            {isLoading ? '⏳ Đang tạo video...' : '🎬 Tạo Video với Sora'}
+            {isLoading ? '⏳ Đang tạo video...' : <><Video size={20} /> Tạo Video với Sora</>}
           </button>
 
           <div className="secondary-actions">
@@ -200,7 +203,7 @@ function SoraVideoGenerator({
               className="login-sora-btn"
               title="Đăng nhập vào Sora nếu phiên đã hết hạn"
             >
-              🔑 Đăng nhập Sora
+              <Key size={16} /> Đăng nhập Sora
             </button>
             <button
               onClick={handleCloseBrowser}
@@ -208,7 +211,7 @@ function SoraVideoGenerator({
               className="close-browser-btn"
               title="Đóng trình duyệt hiện tại"
             >
-              ❌ Đóng trình duyệt
+              <X size={16} /> Đóng trình duyệt
             </button>
           </div>
         </div>

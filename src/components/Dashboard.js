@@ -5,6 +5,7 @@ import CaptionGenerator from './CaptionGenerator';
 import SoraVideoGenerator from './SoraVideoGenerator';
 import ProgressTracker from './ProgressTracker';
 import SettingsModal from './SettingsModal';
+import { Settings } from 'lucide-react';
 
 function Dashboard() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -79,7 +80,7 @@ function Dashboard() {
             marginLeft: 'auto'
           }}
         >
-          ⚙️
+          <Settings size={20} color="white" />
         </button>
       </header>
 

@@ -1,19 +1,23 @@
-import React from 'react';
+import { ClipboardList, Check } from 'lucide-react';
 import '../styles/ProgressTracker.css';
 
 function ProgressTracker({ progress, currentStep }) {
   return (
     <div className="progress-tracker">
-      <h3>📋 Tiến độ</h3>
+      <h3><ClipboardList size={20} /> Tiến độ</h3>
 
       <div className="steps">
         <div className={`step ${currentStep >= 0 ? 'active' : ''} ${currentStep > 0 ? 'completed' : ''}`}>
-          <div className="step-number">1</div>
+          <div className="step-number">
+            {currentStep > 0 ? <Check size={14} /> : 1}
+          </div>
           <div className="step-title">Trích xuất TikTok</div>
         </div>
 
         <div className={`step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
-          <div className="step-number">2</div>
+          <div className="step-number">
+            {currentStep > 1 ? <Check size={14} /> : 2}
+          </div>
           <div className="step-title">Tạo Caption</div>
         </div>
 

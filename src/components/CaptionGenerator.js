@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ArrowLeft, Sparkles, Edit3, Check, RefreshCw } from 'lucide-react';
 import '../styles/CaptionGenerator.css';
 
 function CaptionGenerator({
@@ -47,7 +48,9 @@ function CaptionGenerator({
   return (
     <div className="caption-generator">
       <div className="header">
-        <button className="back-btn" onClick={onBack}>← Quay lại</button>
+        <button className="back-btn" onClick={onBack}>
+          <ArrowLeft size={18} /> Quay lại
+        </button>
         <h2>Tạo Caption</h2>
       </div>
 
@@ -104,7 +107,7 @@ function CaptionGenerator({
                     className="edit-btn"
                     onClick={() => setIsEditing(true)}
                   >
-                    ✏️ Sửa
+                    <Edit3 size={14} /> Sửa
                   </button>
                 </div>
               ) : (
@@ -118,7 +121,7 @@ function CaptionGenerator({
                     className="save-btn"
                     onClick={() => setIsEditing(false)}
                   >
-                    ✓ Lưu
+                    <Check size={14} /> Lưu
                   </button>
                 </div>
               )}
@@ -128,7 +131,7 @@ function CaptionGenerator({
               onClick={handleUseCaption}
               className="use-caption-btn"
             >
-              ✓ Sử dụng Caption này & Tiếp tục
+              <Check size={18} /> Sử dụng Caption này & Tiếp tục
             </button>
 
             <button
@@ -136,7 +139,7 @@ function CaptionGenerator({
               disabled={isLoading}
               className="regenerate-btn"
             >
-              🔄 Tạo lại cái mới
+              <RefreshCw size={14} /> Tạo lại cái mới
             </button>
           </>
         )}

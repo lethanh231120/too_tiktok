@@ -7,6 +7,8 @@
 
 .dashboard-header {
   padding: 1.5rem 2rem;
+  padding-left: 80px;
+  /* Space for macOS traffic lights */
   background: rgba(18, 18, 18, 0.6);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -20,6 +22,12 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  -webkit-app-region: drag;
+}
+
+.dashboard-header button,
+.dashboard-header .settings-toggle-btn {
+  -webkit-app-region: no-drag;
 }
 
 .dashboard-header .tiktok-logo {
