@@ -10,7 +10,7 @@ class GeminiService {
     // The new SDK automatically picks up GEMINI_API_KEY from environment,
     // but we can pass it explicitly too just in case
     // In Electron, native fetch sometimes drops sockets. We override fetch or use httpOptions
-    this.ai = new GoogleGenAI({ 
+    this.ai = new GoogleGenAI({
       apiKey,
       httpOptions: {
         // This helps prevent socket hang ups in Electron
@@ -37,13 +37,22 @@ class GeminiService {
 
   async generateVideoPrompt(content, imagePath = null) {
     try {
-      let prompt = `You are a creative video director. Create a detailed Sora AI video generation prompt based on this content:\n\nContent: ${content}\n\nGenerate a professional, detailed prompt for Sora that describes:\n- Scene composition\n- Camera movements\n- Characters and their actions\n- Lighting and mood\n- Visual style\n\nMake it vivid and detailed for AI video generation.`;
+      let prompt = `You are a creative video director. Create a short, punchy Sora AI video generation prompt for a trending TikTok video based on this product:
+
+Content: ${content}
+
+Requirements:
+- MUST be exactly 1 to 2 short sentences.
+- MUST be written as a single continuous line (NO line breaks, NO newlines).
+- Focus strictly on visual elements: dynamic camera movement, lighting, and a trendy TikTok vibe.
+- Keep it under 30 words.
+- Do not include hashtags or text overlays in the prompt.`;
 
       const response = await this.ai.models.generateContent({
         model: this.modelName,
         contents: prompt,
       });
-      return response.text.trim();
+      return response.text.replace(/[\r\n]+/g, ' ').trim();
     } catch (error) {
       console.error('Error generating video prompt:', error);
       throw error;

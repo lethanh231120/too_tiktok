@@ -42,7 +42,7 @@ async function testSoraFlow() {
 
     // ===== Step 1: Launch Browser =====
     log('Khởi tạo Puppeteer browser (sử dụng system Chrome)...', 'step');
-    
+
     browser = await puppeteer.launch({
       headless: false,
       executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -59,8 +59,9 @@ async function testSoraFlow() {
 
     log('Browser đã khởi tạo thành công!', 'success');
 
-    const page = await browser.newPage();
-    
+    const pages = await browser.pages();
+    const page = pages.length > 0 ? pages[0] : await browser.newPage();
+
     // Anti-detection
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, 'webdriver', { get: () => false });
@@ -69,9 +70,9 @@ async function testSoraFlow() {
     // ===== Step 2: Navigate to Sora =====
     log('Navigating đến sora.chatgpt.com...', 'step');
     try {
-      await page.goto(SORA_URL, { 
+      await page.goto(SORA_URL, {
         waitUntil: 'domcontentloaded',
-        timeout: 60000 
+        timeout: 60000
       });
     } catch (navErr) {
       log(`Navigation warning: ${navErr.message}`, 'warn');
@@ -86,7 +87,7 @@ async function testSoraFlow() {
 
     // ===== Step 3: Wait for login =====
     log('Kiểm tra trạng thái đăng nhập...', 'step');
-    
+
     // Check current page URL to determine login state
     const currentUrl = page.url();
     log(`URL hiện tại: ${currentUrl}`, 'info');
@@ -114,20 +115,20 @@ async function testSoraFlow() {
     log(`Page state: ${JSON.stringify(pageState, null, 2)}`, 'info');
 
     const needsLogin = !pageState.hasTextarea && !pageState.hasContentEditable;
-    
+
     if (needsLogin) {
       log('⏳ Cần đăng nhập! Bạn có 90 giây để đăng nhập thủ công trên browser window.', 'warn');
       log('👉 Hãy đăng nhập vào tài khoản ChatGPT/Sora', 'info');
-      
+
       const loginTimeout = 90000;
       const loginStart = Date.now();
       let loggedIn = false;
-      
+
       while (Date.now() - loginStart < loginTimeout) {
         try {
           const hasInput = await page.evaluate(() => {
             return !!(
-              document.querySelector('textarea') || 
+              document.querySelector('textarea') ||
               document.querySelector('[contenteditable="true"]') ||
               document.querySelector('[data-testid="prompt-input"]') ||
               document.querySelector('.prompt-input')
@@ -142,7 +143,7 @@ async function testSoraFlow() {
         } catch (e) {
           // Page navigating
         }
-        
+
         const elapsed = Math.round((Date.now() - loginStart) / 1000);
         if (elapsed % 15 === 0 && elapsed > 0) {
           log(`Đang chờ đăng nhập... (${elapsed}s / ${loginTimeout / 1000}s)`, 'info');
@@ -162,7 +163,7 @@ async function testSoraFlow() {
 
     // ===== Step 4: Discover page elements =====
     log('Phân tích cấu trúc trang Sora...', 'step');
-    
+
     const elements = await page.evaluate(() => {
       const results = {
         textareas: [],
@@ -217,10 +218,10 @@ async function testSoraFlow() {
 
     log(`📋 Textareas: ${elements.textareas.length}`, 'info');
     elements.textareas.forEach((t, i) => log(`  [${i}] ${JSON.stringify(t)}`, 'info'));
-    
+
     log(`📋 ContentEditable: ${elements.editables.length}`, 'info');
     elements.editables.forEach((e, i) => log(`  [${i}] ${JSON.stringify(e)}`, 'info'));
-    
+
     log(`📋 Visible Buttons: ${elements.buttons.length}`, 'info');
     elements.buttons.forEach((b, i) => log(`  [${i}] ${JSON.stringify(b)}`, 'info'));
 
@@ -371,7 +372,7 @@ async function testSoraFlow() {
 
     // ===== Step 6: Find and click Generate/Submit button =====
     log('Tìm nút Generate/Submit...', 'step');
-    
+
     let submitted = false;
 
     // Try keyboard shortcut first (often Enter or Ctrl+Enter)
@@ -382,9 +383,9 @@ async function testSoraFlow() {
         const text = btn.textContent.toLowerCase().trim();
         const label = (btn.getAttribute('aria-label') || '').toLowerCase();
         const testId = btn.getAttribute('data-testid') || '';
-        
+
         if (
-          text.includes('generate') || text.includes('create') || 
+          text.includes('generate') || text.includes('create') ||
           text.includes('submit') || text.includes('send') ||
           label.includes('generate') || label.includes('create') ||
           label.includes('send') || label.includes('submit') ||
@@ -404,7 +405,7 @@ async function testSoraFlow() {
 
     if (submitBtn.found) {
       log(`Tìm thấy nút: "${submitBtn.text}" (disabled: ${submitBtn.disabled})`, 'info');
-      
+
       if (!submitBtn.disabled) {
         // Try clicking it
         const buttonEl = await page.evaluateHandle(() => {
@@ -413,7 +414,7 @@ async function testSoraFlow() {
             const text = btn.textContent.toLowerCase().trim();
             const label = (btn.getAttribute('aria-label') || '').toLowerCase();
             if (
-              text.includes('generate') || text.includes('create') || 
+              text.includes('generate') || text.includes('create') ||
               text.includes('submit') || text.includes('send') ||
               label.includes('generate') || label.includes('create') ||
               label.includes('send')
@@ -437,7 +438,7 @@ async function testSoraFlow() {
       log('Trying Enter key to submit...', 'info');
       await page.keyboard.press('Enter');
       await sleep(2000);
-      
+
       // Check if something changed
       await page.screenshot({ path: path.join(TEMP_DIR, 'sora_after_enter.png'), fullPage: true });
       log('Đã nhấn Enter, kiểm tra kết quả...', 'info');
@@ -457,19 +458,19 @@ async function testSoraFlow() {
     while (true) {
       await sleep(30000);
       monitorCount++;
-      
+
       try {
         // Check if browser/page is still alive
         const url = page.url();
         log(`[Monitor #${monitorCount}] URL: ${url}`, 'info');
-        
+
         // Check for video element
         const videoCheck = await page.evaluate(() => {
           const video = document.querySelector('video');
           if (video) {
             const source = video.querySelector('source');
-            return { 
-              found: true, 
+            return {
+              found: true,
               src: video.src || (source ? source.src : ''),
             };
           }
@@ -482,9 +483,9 @@ async function testSoraFlow() {
         }
 
         // Periodic screenshot
-        await page.screenshot({ 
-          path: path.join(TEMP_DIR, `sora_monitor_${monitorCount}.png`), 
-          fullPage: false 
+        await page.screenshot({
+          path: path.join(TEMP_DIR, `sora_monitor_${monitorCount}.png`),
+          fullPage: false
         });
       } catch (e) {
         log(`Monitor error: ${e.message}`, 'warn');
@@ -495,10 +496,10 @@ async function testSoraFlow() {
   } catch (error) {
     log(`Lỗi: ${error.message}`, 'error');
     console.error(error.stack);
-    
+
     if (browser) {
       log('Browser vẫn mở để debug. Nhấn Ctrl+C để đóng.', 'warn');
-      await new Promise(() => {});
+      await new Promise(() => { });
     }
   }
 }

@@ -18,7 +18,7 @@ async function runEndToEnd() {
         console.log('2. Proceeding to Sora automation with image:', tiktokData.imagePath);
 
         // We will generate a quick prompt based on the title
-        const prompt = `A cinematic TikTok style video showcasing this product: ${tiktokData.title}. Studio lighting, smooth camera track, vertical format.`;
+        const prompt = `A trendy TikTok video showcasing this product: ${tiktokData.title}, smooth cinematic camera track.`;
 
         console.log('Prompt:', prompt);
 

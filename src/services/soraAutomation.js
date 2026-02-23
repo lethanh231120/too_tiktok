@@ -32,7 +32,8 @@ class SoraAutomation {
     let browser = null;
     try {
       browser = await this.initBrowser();
-      const page = await browser.newPage();
+      const pages = await browser.pages();
+      const page = pages.length > 0 ? pages[0] : await browser.newPage();
 
       // Set viewport
       await page.setViewport({ width: 1280, height: 720 });
@@ -118,13 +119,16 @@ class SoraAutomation {
 
   async enterPrompt(page, prompt) {
     let promptEntered = false;
+    // Xóa bỏ các ký tự xuống dòng để tránh việc Puppeteer tự động bấm Enter giữa chừng
+    const safePrompt = prompt.replace(/[\r\n]+/g, ' ').trim();
+
     try {
       // Find text area or input field for prompt
       const textarea = await page.$('textarea');
       if (textarea) {
         await textarea.click();
         await new Promise(r => setTimeout(r, 500));
-        await textarea.type(prompt, { delay: 15 });
+        await textarea.type(safePrompt, { delay: 15 });
         promptEntered = true;
       }
 
@@ -133,7 +137,7 @@ class SoraAutomation {
         if (editable) {
           await editable.click();
           await new Promise(r => setTimeout(r, 500));
-          await page.keyboard.type(prompt, { delay: 15 });
+          await page.keyboard.type(safePrompt, { delay: 15 });
           promptEntered = true;
         }
       }
@@ -143,7 +147,7 @@ class SoraAutomation {
         if (textbox) {
           await textbox.click();
           await new Promise(r => setTimeout(r, 500));
-          await page.keyboard.type(prompt, { delay: 15 });
+          await page.keyboard.type(safePrompt, { delay: 15 });
           promptEntered = true;
         }
       }
@@ -244,51 +248,12 @@ class SoraAutomation {
       console.log('Finalizing page state before submit... ⏳');
       await new Promise(r => setTimeout(r, 2000));
 
-      let submitted = false;
-      const submitBtn = await page.evaluate(() => {
-        const buttons = Array.from(document.querySelectorAll('button'));
-        for (const btn of buttons) {
-          const text = btn.textContent.toLowerCase().trim();
-          const label = (btn.getAttribute('aria-label') || '').toLowerCase();
-          const testId = btn.getAttribute('data-testid') || '';
-          if (
-            text.includes('generate') || text.includes('create') ||
-            text.includes('submit') || text.includes('send') ||
-            label.includes('generate') || label.includes('submit') ||
-            testId.includes('generate') || testId.includes('submit')
-          ) {
-            return { found: true, disabled: btn.disabled };
-          }
-        }
-        return { found: false };
-      });
+      console.log('Pressing Enter twice to submit to Sora...');
+      await page.keyboard.press('Enter');
+      await new Promise(r => setTimeout(r, 1000)); // Đợi một nhịp
+      await page.keyboard.press('Enter');
 
-      if (submitBtn.found && !submitBtn.disabled) {
-        const buttonEl = await page.evaluateHandle(() => {
-          const buttons = Array.from(document.querySelectorAll('button'));
-          for (const btn of buttons) {
-            const text = btn.textContent.toLowerCase().trim();
-            const label = (btn.getAttribute('aria-label') || '').toLowerCase();
-            const testId = btn.getAttribute('data-testid') || '';
-            if (
-              text.includes('generate') || text.includes('create') ||
-              text.includes('submit') || label.includes('generate') || testId.includes('generate')
-            ) {
-              return btn;
-            }
-          }
-          return null;
-        });
-        if (buttonEl) {
-          await buttonEl.click();
-          submitted = true;
-        }
-      }
-
-      if (!submitted && this.lastPromptEntered) {
-        await page.keyboard.press('Enter');
-        await new Promise(r => setTimeout(r, 2000));
-      }
+      await new Promise(r => setTimeout(r, 2000));
     } catch (error) {
       console.warn('Could not submit video generation:', error.message);
     }
