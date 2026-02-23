@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   createSoraVideo: (data) => ipcRenderer.invoke('create-sora-video', data),
   saveConfig: (config) => ipcRenderer.invoke('save-config', config),
   loadConfig: () => ipcRenderer.invoke('load-config'),
+  invoke: (channel, data) => ipcRenderer.invoke(channel, data),
   onTiktokDataReceived: (callback) => ipcRenderer.on('tiktok-data-received', callback),
   onVideoCreated: (callback) => ipcRenderer.on('video-created', callback),
 });

@@ -9,7 +9,7 @@ function TikTokForm({ onDataExtracted, setIsLoading, isLoading, addProgress }) {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-    addProgress('🔄 Extracting TikTok data...');
+    addProgress('🔄 Đang trích xuất dữ liệu TikTok...');
 
     try {
       if (!window.electronAPI) {
@@ -21,12 +21,12 @@ function TikTokForm({ onDataExtracted, setIsLoading, isLoading, addProgress }) {
       if (result.success) {
         onDataExtracted(result.data);
       } else {
-        setError(result.error || 'Failed to extract data');
-        addProgress(`✗ Error: ${result.error}`);
+        setError(result.error || 'Trích xuất dữ liệu thất bại');
+        addProgress(`✗ Lỗi: ${result.error}`);
       }
     } catch (err) {
       setError(err.message);
-      addProgress(`✗ Error: ${err.message}`);
+      addProgress(`✗ Lỗi: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -35,8 +35,8 @@ function TikTokForm({ onDataExtracted, setIsLoading, isLoading, addProgress }) {
   return (
     <div className="tiktok-form">
       <div className="form-container">
-        <h2>Enter TikTok URL</h2>
-        <p>Paste a TikTok video URL to get started</p>
+        <h2>Nhập TikTok URL</h2>
+        <p>Dán link video TikTok để bắt đầu</p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -59,22 +59,22 @@ function TikTokForm({ onDataExtracted, setIsLoading, isLoading, addProgress }) {
             disabled={isLoading || !url}
             className="submit-btn"
           >
-            {isLoading ? 'Extracting...' : 'Extract Data'}
+            {isLoading ? 'Đang trích xuất...' : 'Trích xuất dữ liệu'}
           </button>
         </form>
 
         <div className="format-hint">
-          <h3>Valid URL Format:</h3>
+          <h3>Định dạng link hợp lệ:</h3>
           <code>https://www.tiktok.com/@username/video/123456789</code>
         </div>
       </div>
 
       <div className="info-section">
-        <h3>What this does:</h3>
+        <h3>Tính năng:</h3>
         <ul>
-          <li>Extracts video title and description</li>
-          <li>Downloads thumbnail/cover image</li>
-          <li>Analyzes content structure</li>
+          <li>Trích xuất tiêu đề và mô tả video</li>
+          <li>Tải ảnh bìa/thumbnail</li>
+          <li>Phân tích cấu trúc nội dung</li>
         </ul>
       </div>
     </div>

@@ -2,10 +2,11 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const fs = require('fs-extra');
 const path = require('path');
+const os = require('os');
 
 class TikTokExtractor {
   constructor() {
-    this.tempDir = path.join(__dirname, '../../temp');
+    this.tempDir = path.join(os.tmpdir(), 'tiktok-gen-video');
     fs.ensureDirSync(this.tempDir);
   }
 

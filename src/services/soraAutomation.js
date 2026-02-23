@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs-extra');
 const path = require('path');
+const os = require('os');
 
 class SoraAutomation {
   constructor() {
@@ -14,7 +15,7 @@ class SoraAutomation {
       this.browser = await puppeteer.launch({
         headless: false,
         executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-        userDataDir: path.join(__dirname, '../../temp/chrome-user-data'),
+        userDataDir: path.join(os.tmpdir(), 'tiktok-sora-chrome-user-data'),
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',

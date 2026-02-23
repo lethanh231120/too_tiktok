@@ -17,7 +17,7 @@ function CaptionGenerator({
   const handleGenerateCaption = async () => {
     setError('');
     setIsLoading(true);
-    addProgress('🎯 Generating caption with Gemini...');
+    addProgress('🎯 Đang tạo caption bằng Gemini...');
 
     try {
       const content = `Title: ${tiktokData.title}\nDescription: ${tiktokData.description}`;
@@ -27,14 +27,14 @@ function CaptionGenerator({
       if (result.success) {
         setCaption(result.caption);
         setEditedCaption(result.caption);
-        addProgress('✓ Caption generated');
+        addProgress('✓ Đã tạo caption');
       } else {
-        setError(result.error || 'Failed to generate caption');
-        addProgress(`✗ Error: ${result.error}`);
+        setError(result.error || 'Tạo caption thất bại');
+        addProgress(`✗ Lỗi: ${result.error}`);
       }
     } catch (err) {
       setError(err.message);
-      addProgress(`✗ Error: ${err.message}`);
+      addProgress(`✗ Lỗi: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -47,24 +47,24 @@ function CaptionGenerator({
   return (
     <div className="caption-generator">
       <div className="header">
-        <button className="back-btn" onClick={onBack}>← Back</button>
-        <h2>Generate Caption</h2>
+        <button className="back-btn" onClick={onBack}>← Quay lại</button>
+        <h2>Tạo Caption</h2>
       </div>
 
       <div className="content-review">
         <div className="extracted-content">
-          <h3>Extracted Content</h3>
+          <h3>Nội dung đã trích xuất</h3>
           <div className="content-item">
-            <strong>Title:</strong>
+            <strong>Tiêu đề:</strong>
             <p>{tiktokData.title}</p>
           </div>
           <div className="content-item">
-            <strong>Description:</strong>
+            <strong>Mô tả:</strong>
             <p>{tiktokData.description}</p>
           </div>
           {(tiktokData.images && tiktokData.images.length > 0) && (
             <div className="content-item">
-              <strong>Image:</strong>
+              <strong>Hình ảnh:</strong>
               <div style={{ margin: '0.75rem 0' }}>
                 <img
                   src={tiktokData.images[0]}
@@ -91,12 +91,12 @@ function CaptionGenerator({
             disabled={isLoading}
             className="generate-btn"
           >
-            {isLoading ? '⏳ Generating...' : '✨ Generate Caption'}
+            {isLoading ? '⏳ Đang tạo...' : '✨ Tạo Caption'}
           </button>
         ) : (
           <>
             <div className="caption-display">
-              <h3>Generated Caption</h3>
+              <h3>Caption đã tạo</h3>
               {!isEditing ? (
                 <div className="caption-text">
                   <p>{caption}</p>
@@ -104,7 +104,7 @@ function CaptionGenerator({
                     className="edit-btn"
                     onClick={() => setIsEditing(true)}
                   >
-                    ✏️ Edit
+                    ✏️ Sửa
                   </button>
                 </div>
               ) : (
@@ -118,7 +118,7 @@ function CaptionGenerator({
                     className="save-btn"
                     onClick={() => setIsEditing(false)}
                   >
-                    ✓ Save
+                    ✓ Lưu
                   </button>
                 </div>
               )}
@@ -128,7 +128,7 @@ function CaptionGenerator({
               onClick={handleUseCaption}
               className="use-caption-btn"
             >
-              ✓ Use This Caption & Continue
+              ✓ Sử dụng Caption này & Tiếp tục
             </button>
 
             <button
@@ -136,7 +136,7 @@ function CaptionGenerator({
               disabled={isLoading}
               className="regenerate-btn"
             >
-              🔄 Generate New
+              🔄 Tạo lại cái mới
             </button>
           </>
         )}
