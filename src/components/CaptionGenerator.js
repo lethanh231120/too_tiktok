@@ -21,7 +21,7 @@ function CaptionGenerator({
 
     try {
       const content = `Title: ${tiktokData.title}\nDescription: ${tiktokData.description}`;
-      
+
       const result = await window.electronAPI.generateCaption(content);
 
       if (result.success) {
@@ -62,9 +62,22 @@ function CaptionGenerator({
             <strong>Description:</strong>
             <p>{tiktokData.description}</p>
           </div>
-          {tiktokData.imagePath && (
+          {(tiktokData.images && tiktokData.images.length > 0) && (
             <div className="content-item">
               <strong>Image:</strong>
+              <div style={{ margin: '0.75rem 0' }}>
+                <img
+                  src={tiktokData.images[0]}
+                  alt="Extracted preview"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '200px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                  }}
+                />
+              </div>
               <p className="image-path">{tiktokData.imagePath}</p>
             </div>
           )}

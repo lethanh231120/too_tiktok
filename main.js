@@ -31,10 +31,14 @@ function createWindow() {
     },
   });
 
-  // Load a simple HTML file instead of React dev server
-  mainWindow.loadFile(path.join(__dirname, 'public', 'index.html'));
+  const isDev = process.env.NODE_ENV !== 'production';
 
-  mainWindow.webContents.openDevTools();
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:3000');
+    // mainWindow.webContents.openDevTools();
+  } else {
+    mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
+  }
 }
 
 app.on('ready', createWindow);

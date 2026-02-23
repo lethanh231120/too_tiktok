@@ -7,10 +7,10 @@
   "scripts": {
     "start": "electron .",
     "react-start": "react-scripts start",
-    "dev": "npm run start",
+    "dev": "concurrently \"npm run react-start\" \"wait-on http://localhost:3000 && npm run start\"",
     "react-build": "react-scripts build",
-    "build": "electron-builder -m --x64 --arm64",
-    "build:dir": "electron-builder --dir"
+    "build": "npm run react-build && electron-builder -m --x64 --arm64",
+    "build:dir": "npm run react-build && electron-builder --dir"
   },
   "dependencies": {
     "@google/genai": "^1.42.0",
@@ -24,12 +24,14 @@
     "puppeteer": "^21.0.0"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "electron": "27.0.0",
     "electron-builder": "24.6.4",
     "electron-is-dev": "^2.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "wait-on": "^9.0.4"
   },
   "build": {
     "appId": "com.tiktokvidgenerator.app",

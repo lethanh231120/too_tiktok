@@ -22,7 +22,7 @@ function SoraVideoGenerator({
 
     try {
       const content = `${tiktokData.title} - ${tiktokData.description} - Caption: ${caption}`;
-      
+
       const result = await window.electronAPI.generateSoraPrompt(content);
 
       if (result.success) {
@@ -88,9 +88,26 @@ function SoraVideoGenerator({
             <span className="label">Caption:</span>
             <span className="value">{caption}</span>
           </div>
-          <div className="summary-item">
+          <div className="summary-item" style={{ alignItems: 'center' }}>
             <span className="label">Image:</span>
-            <span className="value">{tiktokData.imagePath ? '✓ Provided' : '✗ None'}</span>
+            <span className="value">
+              {(tiktokData.images && tiktokData.images.length > 0) ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <img
+                    src={tiktokData.images[0]}
+                    alt="Preview"
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      objectFit: 'cover',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(37, 244, 238, 0.3)'
+                    }}
+                  />
+                  <span style={{ color: '#25f4ee' }}>✓ Provided</span>
+                </div>
+              ) : '✗ None'}
+            </span>
           </div>
         </div>
       </div>
@@ -98,16 +115,20 @@ function SoraVideoGenerator({
       <div className="configuration">
         <div className="config-section">
           <label>Character</label>
-          <select
+          <input
+            type="text"
+            list="character-options"
             value={characterId}
             onChange={(e) => setCharacterId(e.target.value)}
             disabled={isLoading}
-          >
+            placeholder="Type or select a character ID"
+          />
+          <datalist id="character-options">
             {commonCharacters.map(char => (
               <option key={char} value={char}>{char}</option>
             ))}
-          </select>
-          <p className="hint">Select which character to use for video generation</p>
+          </datalist>
+          <p className="hint">Type a custom character ID or select from the list</p>
         </div>
 
         <div className="config-section">

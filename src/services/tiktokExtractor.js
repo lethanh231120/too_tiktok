@@ -90,12 +90,11 @@ class TikTokExtractor {
         images.push(ogImage);
       }
 
-      // Download image
+      // Download image (still needed for uploading to Sora later)
       let imagePath = null;
       if (ogImage) {
         imagePath = await this.downloadImage(ogImage, videoId);
       }
-
 
       return {
         videoId,
