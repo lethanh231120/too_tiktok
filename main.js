@@ -100,9 +100,48 @@ ipcMain.handle('generate-sora-prompt', async (event, content) => {
 ipcMain.handle('create-sora-video', async (event, { imageData, prompt, characterId }) => {
   try {
     const soraAutomation = require('./src/services/soraAutomation');
+    console.log('[main] Starting Sora submission...');
     const result = await soraAutomation.createVideoWithCharacter(imageData, prompt, characterId);
-    return { success: true, result };
+    console.log('[main] Submission result:', result.success ? 'Success' : `Failed (NeedLogin: ${!!result.needLogin})`);
+    return result;
   } catch (error) {
+    console.error('[main] Submission error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('poll-sora-result', async (event) => {
+  try {
+    const soraAutomation = require('./src/services/soraAutomation');
+    const result = await soraAutomation.pollForVideoResult();
+    return result;
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('download-video', async (event, { url, filename }) => {
+  try {
+    const fetch = require('node-fetch');
+    const fs = require('fs-extra');
+    const os = require('os');
+    const path = require('path');
+
+    const downloadDir = path.join(os.homedir(), 'Downloads', 'TikTokGenVideos');
+    await fs.ensureDir(downloadDir);
+
+    const filePath = path.join(downloadDir, filename || `video_${Date.now()}.mp4`);
+
+    console.log(`Downloading video from ${url} to ${filePath}...`);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to download: ${response.statusText}`);
+
+    const buffer = await response.buffer();
+    await fs.writeFile(filePath, buffer);
+
+    return { success: true, filePath };
+  } catch (error) {
+    console.error('Download error:', error);
     return { success: false, error: error.message };
   }
 });

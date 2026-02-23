@@ -12,6 +12,9 @@
 }
 
 .sora-video-generator .back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.6rem 1.25rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -146,6 +149,10 @@
 .generate-prompt-btn,
 .regenerate-prompt-btn,
 .create-video-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
   padding: 1rem 1.5rem;
   background: linear-gradient(135deg, #fe2c55 0%, #ff1744 100%);
   color: white;
@@ -210,6 +217,10 @@
 
 .login-sora-btn,
 .close-browser-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   flex: 1;
   padding: 0.8rem 1rem;
   background: rgba(255, 255, 255, 0.05);
@@ -239,6 +250,10 @@
 
 .create-video-btn {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
   padding: 1.25rem;
   background: linear-gradient(135deg, #25f4ee 0%, #1ad4ce 100%);
   color: #000000;
@@ -262,7 +277,6 @@
   border-radius: 12px;
   color: #25f4ee;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-left: 4px solid #25f4ee;
 }
 
 .info-note p {
@@ -270,4 +284,88 @@
   font-size: 0.95rem;
   line-height: 1.5;
   color: #e1e1e1;
+}
+
+/* Submission Verification Styles */
+.submission-verification {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(37, 244, 238, 0.03);
+  border: 1px solid rgba(37, 244, 238, 0.15);
+  border-radius: 16px;
+  animation: fadeSlideIn 0.5s ease-out;
+}
+
+.submission-verification h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #25f4ee;
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
+}
+
+.submission-verification p {
+  color: #a1a1a1;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.active-prompt-display {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem;
+  border-radius: 10px;
+  border-left: 3px solid #25f4ee;
+  margin-bottom: 1.5rem;
+}
+
+.active-prompt-display code {
+  color: #e1e1e1;
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  display: block;
+  white-space: pre-wrap;
+}
+
+.screenshot-container {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #000;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.screenshot-container img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.screenshot-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  padding: 0.8rem;
+  color: #25f4ee;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: center;
+  backdrop-filter: blur(4px);
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

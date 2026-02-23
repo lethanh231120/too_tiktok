@@ -75,6 +75,10 @@
 }
 
 .submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
   width: 100%;
   padding: 1rem;
   background: linear-gradient(135deg, #fe2c55 0%, #ff1744 100%);
@@ -170,20 +174,21 @@
 }
 
 .info-section li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
   color: #a0a0a0;
   font-size: 0.95rem;
-  position: relative;
-  padding-left: 1.5rem;
+  line-height: 1.4;
 }
 
-.info-section li::before {
-  content: '✓';
-  position: absolute;
-  left: 0;
-  color: #25f4ee;
-  font-weight: bold;
+.info-section li .list-icon {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
 }
+
+/* Replaced pseudo-elements with real icons in JSX for better alignment */
 
 @media (max-width: 768px) {
   .tiktok-form {

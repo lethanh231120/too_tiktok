@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Video, Key, X, Zap, Sparkles, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Video, Key, X, Zap, Sparkles, RefreshCw, CheckCircle2, Download, Check } from 'lucide-react';
 import '../styles/SoraVideoGenerator.css';
 
 function SoraVideoGenerator({
@@ -14,6 +14,10 @@ function SoraVideoGenerator({
   const [characterId, setCharacterId] = useState('vuluu2k.thao');
   const [soraPrompt, setSoraPrompt] = useState('');
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+  const [submissionScreenshot, setSubmissionScreenshot] = useState(null);
+  const [autoDownload, setAutoDownload] = useState(true);
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [downloadPath, setDownloadPath] = useState('');
   const [error, setError] = useState('');
 
   const handleGenerateSoraPrompt = async () => {
@@ -44,21 +48,61 @@ function SoraVideoGenerator({
   const handleCreateVideo = async () => {
     setError('');
     setIsLoading(true);
-    addProgress('🎥 Đang tạo video bằng Sora...');
+    setSubmissionScreenshot(null);
+    setVideoUrl(null);
+    setDownloadPath('');
+    addProgress('🎥 Đang bắt đầu quy trình tạo video Sora...');
 
     try {
-      const result = await window.electronAPI.createSoraVideo({
+      // Step 1: Submission
+      const submitResult = await window.electronAPI.createSoraVideo({
         imageData: tiktokData.imagePath,
         prompt: soraPrompt || caption,
         characterId,
       });
 
-      if (result.success) {
-        addProgress('✓ Đã tạo video thành công!');
-        onVideoCreated();
+      if (submitResult.success) {
+        if (submitResult.screenshot) {
+          setSubmissionScreenshot(submitResult.screenshot);
+          addProgress('📸 Đã chụp ảnh xác nhận từ Sora');
+        }
+        addProgress('✓ Đã gửi yêu cầu lên Sora. Đang chờ render...');
+
+        // Step 2: Polling
+        const pollResult = await window.electronAPI.pollSoraResult();
+
+        if (pollResult.success) {
+          setVideoUrl(pollResult.videoUrl);
+          addProgress('✓ Video đã render xong!');
+
+          // Step 3: Auto Download
+          if (autoDownload) {
+            addProgress('📥 Đang tự động tải video về máy...');
+            const filename = `tiktok_video_${Date.now()}.mp4`;
+            const downloadResult = await window.electronAPI.downloadVideo({
+              url: pollResult.videoUrl,
+              filename
+            });
+
+            if (downloadResult.success) {
+              setDownloadPath(downloadResult.filePath);
+              addProgress(`✓ Đã tải về: ${downloadResult.filePath}`);
+            } else {
+              addProgress(`✗ Lỗi tải về: ${downloadResult.error}`);
+            }
+          }
+
+          onVideoCreated();
+        } else {
+          setError(pollResult.error || 'Lỗi khi chờ video render');
+          addProgress(`✗ Lỗi: ${pollResult.error}`);
+        }
+      } else if (submitResult.needLogin) {
+        setError('Phiên làm việc Sora đã hết hạn. Vui lòng nhấn nút "Đăng nhập Sora" bên dưới.');
+        addProgress('⚠️ Yêu cầu đăng nhập Sora để tiếp tục');
       } else {
-        setError(result.error || 'Tạo video thất bại');
-        addProgress(`✗ Lỗi: ${result.error}`);
+        setError(submitResult.error || 'Gửi yêu cầu thất bại');
+        addProgress(`✗ Lỗi: ${submitResult.error}`);
       }
     } catch (err) {
       setError(err.message);
@@ -186,6 +230,46 @@ function SoraVideoGenerator({
         </div>
 
         {error && <div className="error-message">{error}</div>}
+
+        {submissionScreenshot && (
+          <div className="submission-verification">
+            <h4><CheckCircle2 size={16} color="#25f4ee" /> Xác nhận đã gửi tới Sora</h4>
+            <p>Video của bạn đang được xử lý với prompt bên dưới:</p>
+            <div className="active-prompt-display">
+              <code>{soraPrompt || caption}</code>
+            </div>
+            <div className="screenshot-container">
+              <img src={`file://${submissionScreenshot}`} alt="Sora Confirmation" />
+              <div className="screenshot-overlay">Ảnh chụp màn hình từ Sora</div>
+            </div>
+
+            <div className="auto-download-control">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={autoDownload}
+                  onChange={(e) => setAutoDownload(e.target.checked)}
+                />
+                <span className="toggle-text">Tự động tải video về khi xong</span>
+              </label>
+            </div>
+
+            {videoUrl && (
+              <div className="result-display fade-in">
+                <div className="success-badge"><Check size={14} /> Render thành công</div>
+                {downloadPath ? (
+                  <div className="download-path">
+                    <Download size={14} /> Đã lưu tại: <code>{downloadPath}</code>
+                  </div>
+                ) : (
+                  <div className="video-link">
+                    Link video: <a href={videoUrl} target="_blank" rel="noreferrer">Tại đây</a>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="action-buttons">
           <button

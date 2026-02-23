@@ -60,7 +60,7 @@ function TikTokForm({ onDataExtracted, setIsLoading, isLoading, addProgress }) {
             disabled={isLoading || !url}
             className="submit-btn"
           >
-            {isLoading ? 'Đang trích xuất...' : 'Trích xuất dữ liệu'}
+            {isLoading ? '⏳ Đang trích xuất...' : <><Link2 size={18} /> Trích xuất dữ liệu</>}
           </button>
         </form>
 
@@ -73,9 +73,9 @@ function TikTokForm({ onDataExtracted, setIsLoading, isLoading, addProgress }) {
       <div className="info-section">
         <h3>Tính năng:</h3>
         <ul>
-          <li><CheckCircle2 size={16} /> Trích xuất tiêu đề và mô tả video</li>
-          <li><CheckCircle2 size={16} /> Tải ảnh bìa/thumbnail</li>
-          <li><CheckCircle2 size={16} /> Phân tích cấu trúc nội dung</li>
+          <li><CheckCircle2 size={16} color="#25f4ee" className="list-icon" /> Trích xuất tiêu đề và mô tả video</li>
+          <li><CheckCircle2 size={16} color="#25f4ee" className="list-icon" /> Tải ảnh bìa/thumbnail</li>
+          <li><CheckCircle2 size={16} color="#25f4ee" className="list-icon" /> Phân tích cấu trúc nội dung</li>
         </ul>
       </div>
     </div>

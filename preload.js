@@ -5,6 +5,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   generateCaption: (content) => ipcRenderer.invoke('generate-caption', content),
   generateSoraPrompt: (content) => ipcRenderer.invoke('generate-sora-prompt', content),
   createSoraVideo: (data) => ipcRenderer.invoke('create-sora-video', data),
+  pollSoraResult: () => ipcRenderer.invoke('poll-sora-result'),
+  downloadVideo: (data) => ipcRenderer.invoke('download-video', data),
   saveConfig: (config) => ipcRenderer.invoke('save-config', config),
   loadConfig: () => ipcRenderer.invoke('load-config'),
   invoke: (channel, data) => ipcRenderer.invoke(channel, data),
