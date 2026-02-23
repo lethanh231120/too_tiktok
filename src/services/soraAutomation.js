@@ -43,33 +43,33 @@ class SoraAutomation {
       await page.goto(this.soraUrl, { waitUntil: 'networkidle2' });
 
       // Wait for page to load
-      await page.waitForTimeout(3000);
+      await new Promise(r => setTimeout(r, 3000));
 
       // Check if login is required
       const isLoggedIn = await this.checkLogin(page);
       if (!isLoggedIn) {
         console.log('Please login manually. Waiting for authentication...');
-        await page.waitForTimeout(30000); // Wait 30 seconds for user to login
+        await new Promise(r => setTimeout(r, 30000)); // Wait 30 seconds for user to login
       }
 
       // Upload image if provided
       if (imageData && fs.existsSync(imageData)) {
         console.log('Uploading image...');
         await this.uploadImage(page, imageData);
-        await page.waitForTimeout(2000);
+        await new Promise(r => setTimeout(r, 2000));
       }
 
       // Enter prompt
       console.log('Entering prompt...');
       await this.enterPrompt(page, prompt);
-      await page.waitForTimeout(1000);
+      await new Promise(r => setTimeout(r, 1000));
 
       // Select character
       console.log(`Selecting character: ${characterId}`);
       await this.selectCharacter(page, characterId);
 
       console.log('Waiting a bit before submitting... ⏳');
-      await page.waitForTimeout(4000);
+      await new Promise(r => setTimeout(r, 4000));
 
       // Submit video generation
       console.log('Submitting video generation...');
@@ -111,7 +111,7 @@ class SoraAutomation {
       const fileInput = await page.$('input[type="file"]');
       if (fileInput) {
         await fileInput.uploadFile(imagePath);
-        await page.waitForTimeout(2000);
+        await new Promise(r => setTimeout(r, 2000));
       }
     } catch (error) {
       console.warn('Could not upload image:', error.message);
@@ -247,14 +247,14 @@ class SoraAutomation {
   async submitVideoGeneration(page) {
     try {
       console.log('Finalizing page state before submit... ⏳');
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise(r => setTimeout(r, 500));
 
       console.log('Pressing Enter twice to submit to Sora...');
       await page.keyboard.press('Enter');
-      await new Promise(r => setTimeout(r, 1000)); // Đợi một nhịp
+      await new Promise(r => setTimeout(r, 500)); // Đợi một nhịp
       await page.keyboard.press('Enter');
 
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise(r => setTimeout(r, 500));
     } catch (error) {
       console.warn('Could not submit video generation:', error.message);
     }
@@ -294,13 +294,13 @@ class SoraAutomation {
           throw new Error(`Video generation failed: ${errorText}`);
         }
 
-        await page.waitForTimeout(5000);
+        await new Promise(r => setTimeout(r, 5000));
       } catch (error) {
         if (error.message.includes('Video generation failed')) {
           throw error;
         }
         // Continue waiting
-        await page.waitForTimeout(5000);
+        await new Promise(r => setTimeout(r, 5000));
       }
     }
 
