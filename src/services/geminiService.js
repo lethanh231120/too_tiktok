@@ -45,7 +45,8 @@ Requirements:
 - MUST be exactly 1 to 2 short sentences.
 - MUST be written as a single continuous line (NO line breaks, NO newlines).
 - Focus strictly on visual elements: dynamic camera movement, lighting, and a trendy TikTok vibe.
-- Keep it under 30 words.
+- Include a character speaking Vietnamese to introduce the product if needed.
+- Keep it under 100 words.
 - Do not include hashtags or text overlays in the prompt.`;
 
       const response = await this.ai.models.generateContent({
