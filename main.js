@@ -108,3 +108,18 @@ ipcMain.handle('save-config', (event, config) => {
 ipcMain.handle('load-config', () => {
   return store.get('config', {});
 });
+
+ipcMain.handle('open-sora-login', async () => {
+  const soraAutomation = require('./src/services/soraAutomation');
+  const browser = await soraAutomation.initBrowser();
+  const pages = await browser.pages();
+  const page = pages.length > 0 ? pages[0] : await browser.newPage();
+  await page.goto('https://sora.chatgpt.com', { waitUntil: 'networkidle2' });
+  return { success: true };
+});
+
+ipcMain.handle('close-sora-browser', async () => {
+  const soraAutomation = require('./src/services/soraAutomation');
+  await soraAutomation.closeBrowser();
+  return { success: true };
+});

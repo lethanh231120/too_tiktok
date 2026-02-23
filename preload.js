@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveConfig: (config) => ipcRenderer.invoke('save-config', config),
   loadConfig: () => ipcRenderer.invoke('load-config'),
   invoke: (channel, data) => ipcRenderer.invoke(channel, data),
+  openSoraLogin: () => ipcRenderer.invoke('open-sora-login'),
+  closeSoraBrowser: () => ipcRenderer.invoke('close-sora-browser'),
   onTiktokDataReceived: (callback) => ipcRenderer.on('tiktok-data-received', callback),
   onVideoCreated: (callback) => ipcRenderer.on('video-created', callback),
 });

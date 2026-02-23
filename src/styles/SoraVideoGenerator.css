@@ -196,15 +196,59 @@
   cursor: not-allowed;
 }
 
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.secondary-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.login-sora-btn,
+.close-browser-btn {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #e1e1e1;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.login-sora-btn:hover:not(:disabled) {
+  background: rgba(37, 244, 238, 0.1);
+  border-color: rgba(37, 244, 238, 0.3);
+  color: #25f4ee;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 244, 238, 0.15);
+}
+
+.close-browser-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
 .create-video-btn {
   width: 100%;
-  align-self: stretch;
   padding: 1.25rem;
   background: linear-gradient(135deg, #25f4ee 0%, #1ad4ce 100%);
   color: #000000;
   font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: 0.5px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .create-video-btn:hover:not(:disabled) {

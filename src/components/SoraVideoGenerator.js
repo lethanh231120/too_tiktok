@@ -67,6 +67,23 @@ function SoraVideoGenerator({
     }
   };
 
+  const handleLogin = async () => {
+    try {
+      await window.electronAPI.openSoraLogin();
+    } catch (err) {
+      setError(`Lỗi khi mở trang đăng nhập: ${err.message}`);
+    }
+  };
+
+  const handleCloseBrowser = async () => {
+    try {
+      await window.electronAPI.closeSoraBrowser();
+      addProgress('ℹ️ Đã đóng trình duyệt');
+    } catch (err) {
+      setError(`Lỗi khi đóng trình duyệt: ${err.message}`);
+    }
+  };
+
   const commonCharacters = [
     'vuluu2k.thao',
     'character_default',
@@ -167,13 +184,34 @@ function SoraVideoGenerator({
 
         {error && <div className="error-message">{error}</div>}
 
-        <button
-          onClick={handleCreateVideo}
-          disabled={isLoading || !soraPrompt}
-          className="create-video-btn"
-        >
-          {isLoading ? '⏳ Đang tạo video...' : '🎬 Tạo Video với Sora'}
-        </button>
+        <div className="action-buttons">
+          <button
+            onClick={handleCreateVideo}
+            disabled={isLoading || !soraPrompt}
+            className="create-video-btn"
+          >
+            {isLoading ? '⏳ Đang tạo video...' : '🎬 Tạo Video với Sora'}
+          </button>
+
+          <div className="secondary-actions">
+            <button
+              onClick={handleLogin}
+              disabled={isLoading}
+              className="login-sora-btn"
+              title="Đăng nhập vào Sora nếu phiên đã hết hạn"
+            >
+              🔑 Đăng nhập Sora
+            </button>
+            <button
+              onClick={handleCloseBrowser}
+              disabled={isLoading}
+              className="close-browser-btn"
+              title="Đóng trình duyệt hiện tại"
+            >
+              ❌ Đóng trình duyệt
+            </button>
+          </div>
+        </div>
 
         <div className="info-note">
           <p>

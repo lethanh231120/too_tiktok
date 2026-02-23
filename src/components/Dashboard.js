@@ -37,6 +37,13 @@ function Dashboard() {
     setCaption('');
   };
 
+  const handleReset = () => {
+    setCurrentStep(0);
+    setTiktokData(null);
+    setCaption('');
+    setProgress([]);
+  };
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -107,6 +114,7 @@ function Dashboard() {
               isLoading={isLoading}
               addProgress={addProgress}
               onBack={() => setCurrentStep(1)}
+              onReset={handleReset}
             />
           )}
         </div>
