@@ -42,6 +42,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "icon.png",
       "build/**/*",
       "src/services/**/*",
       "node_modules/**/*"

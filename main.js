@@ -20,12 +20,16 @@ const store = new Store();
 let mainWindow;
 
 function createWindow() {
+  const fs = require('fs');
+  const iconPath = path.join(__dirname, 'icon.png');
+  const iconExists = fs.existsSync(iconPath);
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 15, y: 15 },
-    icon: path.join(__dirname, 'icon.png'),
+    icon: iconExists ? iconPath : undefined,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -34,8 +38,8 @@ function createWindow() {
     },
   });
 
-  if (process.platform === 'darwin') {
-    app.dock.setIcon(path.join(__dirname, 'icon.png'));
+  if (process.platform === 'darwin' && iconExists) {
+    app.dock.setIcon(iconPath);
   }
 
   const isDev = !app.isPackaged;
