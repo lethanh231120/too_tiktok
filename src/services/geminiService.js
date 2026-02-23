@@ -5,7 +5,7 @@ const store = new Store();
 
 class GeminiService {
   constructor() {
-    this.modelName = 'gemini-1.5-flash'; // Updated to a more standard stable version if needed, or keep your preference
+    this.modelName = 'gemini-3-flash-preview'; // Updated to a more standard stable version if needed, or keep your preference
     this.ai = null;
   }
 
