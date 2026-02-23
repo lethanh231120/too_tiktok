@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TikTok Video Generator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 2rem;
+      background: rgba(0, 0, 0, 0.2);
+      color: white;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .container {
+      display: flex;
+      flex: 1;
+      padding: 2rem;
+      gap: 2rem;
+    }
+
+    .main-content {
+      flex: 1;
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      overflow-y: auto;
+    }
+
+    .sidebar {
+      width: 300px;
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    h2 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 0.3s ease;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    button {
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .error {
+      padding: 1rem;
+      background-color: #fee;
+      color: #c33;
+      border-left: 4px solid #c33;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+
+    .success {
+      padding: 1rem;
+      background-color: #efe;
+      color: #3c3;
+      border-left: 4px solid #3c3;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+
+    .progress-log {
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 1rem;
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+    }
+
+    .log-entry {
+      padding: 0.5rem;
+      border-left: 3px solid #667eea;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎵 TikTok Video Generator</h1>
+    <p>Automated content generation using Gemini API & Sora</p>
+  </header>
+
+  <div class="container">
+    <div class="main-content">
+      <h2>Enter TikTok URL</h2>
+
+      <div id="error-message"></div>
+      <div id="success-message"></div>
+
+      <form id="tiktok-form">
+        <div class="form-group">
+          <label for="url">TikTok URL</label>
+          <input 
+            type="text" 
+            id="url" 
+            placeholder="https://www.tiktok.com/@creator/video/123456789"
+            required
+          >
+        </div>
+
+        <button type="submit" id="submit-btn">Extract Data</button>
+      </form>
+
+      <div id="content-display" style="display:none; margin-top: 2rem;">
+        <h3>Extracted Content</h3>
+        <div class="form-group">
+          <strong>Title:</strong>
+          <p id="title-display"></p>
+        </div>
+        <div class="form-group">
+          <strong>Description:</strong>
+          <p id="description-display"></p>
+        </div>
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      <h3>📋 Progress</h3>
+      <div class="progress-log" id="progress-log">
+        <div style="color: #999; font-style: italic;">Ready to start...</div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const form = document.getElementById('tiktok-form');
+    const urlInput = document.getElementById('url');
+    const submitBtn = document.getElementById('submit-btn');
+    const errorDiv = document.getElementById('error-message');
+    const successDiv = document.getElementById('success-message');
+    const progressLog = document.getElementById('progress-log');
+
+    function addLog(message) {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.textContent = message;
+      progressLog.appendChild(entry);
+      progressLog.scrollTop = progressLog.scrollHeight;
+    }
+
+    function showError(message) {
+      errorDiv.innerHTML = `<div class="error">${message}</div>`;
+      addLog(`✗ Error: ${message}`);
+    }
+
+    function showSuccess(message) {
+      successDiv.innerHTML = `<div class="success">${message}</div>`;
+    }
+
+    function clearMessages() {
+      errorDiv.innerHTML = '';
+      successDiv.innerHTML = '';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMessages();
+      
+      const url = urlInput.value.trim();
+      
+      if (!url) {
+        showError('Please enter a TikTok URL');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Extracting...';
+      addLog('🔄 Extracting TikTok data...');
+
+      try {
+        // Check if electronAPI is available
+        if (!window.electronAPI) {
+          throw new Error('Electron API not available');
+        }
+        
+        console.log('Calling extractTiktokData with URL:', url);
+        const result = await window.electronAPI.extractTiktokData(url);
+        console.log('Result:', result);
+        
+        if (result.success) {
+          addLog('✓ Data extracted successfully');
+          showSuccess('TikTok data extracted!');
+          
+          document.getElementById('title-display').textContent = result.data.title || 'N/A';
+          document.getElementById('description-display').textContent = result.data.description || 'N/A';
+          document.getElementById('content-display').style.display = 'block';
+        } else {
+          showError(result.error || 'Failed to extract data');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showError(error.message || 'An error occurred');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Extract Data';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+.progress-tracker {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  height: 100%;
+}
+
+.progress-tracker h3 {
+  font-size: 1.2rem;
+  color: #333;
+  margin: 0;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f5f5f5;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.step.active {
+  background: #667eea;
+  color: white;
+}
+
+.step.completed {
+  background: #4caf50;
+  color: white;
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.step.completed .step-number::before {
+  content: '✓';
+  font-size: 1.2rem;
+}
+
+.step-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.progress-log {
+  flex: 1;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.empty-message {
+  color: #999;
+  text-align: center;
+  font-style: italic;
+  margin: auto;
+}
+
+.log-entry {
+  padding: 0.5rem;
+  background: white;
+  border-left: 3px solid #667eea;
+  border-radius: 2px;
+  font-size: 0.9rem;
+  color: #333;
+  word-break: break-word;
+}
+
+.log-entry:last-child {
+  margin-bottom: 0;
+}
+
+/* Scrollbar styling */
+.progress-log::-webkit-scrollbar {
+  width: 6px;
+}
+
+.progress-log::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.progress-log::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 10px;
+}
+
+.progress-log::-webkit-scrollbar-thumb:hover {
+  background: #764ba2;
+}
