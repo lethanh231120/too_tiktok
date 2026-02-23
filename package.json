@@ -2,6 +2,7 @@
   "name": "tiktok-video-generator",
   "version": "1.0.0",
   "description": "Automated TikTok content generator using Gemini API and Sora",
+  "author": "vuluu2k",
   "main": "main.js",
   "homepage": "./",
   "scripts": {
@@ -36,11 +37,12 @@
   "build": {
     "appId": "com.tiktokvidgenerator.app",
     "productName": "TikTok Video Generator",
+    "extends": null,
     "files": [
       "main.js",
       "preload.js",
-      "public/**/*",
-      "src/**/*",
+      "build/**/*",
+      "src/services/**/*",
       "node_modules/**/*"
     ],
     "mac": {

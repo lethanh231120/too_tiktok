@@ -31,7 +31,7 @@ function createWindow() {
     },
   });
 
-  const isDev = process.env.NODE_ENV !== 'production';
+  const isDev = !app.isPackaged;
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000');
