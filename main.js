@@ -1,6 +1,19 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
+require('dotenv').config();
+
+// Polyfill: Electron main process doesn't have browser's File API,
+// but axios v1.6+ references it. Provide a stub to prevent ReferenceError.
+if (typeof globalThis.File === 'undefined') {
+  globalThis.File = class File {
+    constructor(bits, name, options) {
+      this.bits = bits;
+      this.name = name;
+      this.options = options;
+    }
+  };
+}
 
 const store = new Store();
 
@@ -42,9 +55,13 @@ app.on('activate', () => {
 ipcMain.handle('extract-tiktok-data', async (event, tiktokUrl) => {
   try {
     const tiktokExtractor = require('./src/services/tiktokExtractor');
+    console.log('[main] Calling extractTikTokData with:', tiktokUrl);
     const data = await tiktokExtractor.extractTikTokData(tiktokUrl);
+    console.log('[main] Success:', JSON.stringify(data, null, 2));
     return { success: true, data };
   } catch (error) {
+    console.error('[main] Error in extract-tiktok-data:', error.message);
+    console.error('[main] Stack:', error.stack);
     return { success: false, error: error.message };
   }
 });

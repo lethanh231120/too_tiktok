@@ -11,13 +11,15 @@
     "react-build": "react-scripts build"
   },
   "dependencies": {
+    "@google/genai": "^1.42.0",
+    "@google/generative-ai": "^0.3.0",
     "axios": "^1.6.0",
     "cheerio": "^1.0.0-rc.12",
-    "puppeteer": "^21.0.0",
-    "@google/generative-ai": "^0.3.0",
     "dotenv": "^16.0.0",
+    "electron-store": "^8.1.0",
     "fs-extra": "^11.0.0",
-    "electron-store": "^8.1.0"
+    "node-fetch": "^2.7.0",
+    "puppeteer": "^21.0.0"
   },
   "devDependencies": {
     "electron": "27.0.0",
@@ -38,16 +40,30 @@
       "node_modules/**/*"
     ],
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "category": "public.app-category.productivity"
     },
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "certificateFile": null
     }
   },
   "browserslist": {
-    "production": [">0.2%", "not dead", "not op_mini all"],
-    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
