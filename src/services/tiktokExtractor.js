@@ -31,13 +31,13 @@ class TikTokExtractor {
 
       // Extract video ID from URL
       const videoId = this.extractVideoId(expandedUrl);
-      
+
       if (!videoId) {
         throw new Error('Could not extract video ID from URL: ' + expandedUrl);
       }
 
       console.log('Video ID:', videoId);
-      
+
       // Fetch page content with proper headers
       const headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -45,18 +45,50 @@ class TikTokExtractor {
       };
 
       console.log('Fetching TikTok data from:', expandedUrl);
-      const response = await axios.get(expandedUrl, { 
+      const response = await axios.get(expandedUrl, {
         headers,
         maxRedirects: 5,
         timeout: 10000,
       });
-      
+
+      console.log('response data:::::::::::::::', response.data);
+
+
       const $ = cheerio.load(response.data);
 
-      // Extract title/description
-      const description = $('meta[name="description"]').attr('content') || '';
-      const ogImage = $('meta[property="og:image"]').attr('content');
-      const ogTitle = $('meta[property="og:title"]').attr('content') || '';
+      const images = $('.slick-slide img').map((i, el) => $(el).attr('src')).get();
+
+
+      // Extract title/description from HTML
+      let description = $('meta[name="description"]').attr('content') || '';
+      let ogImage = $('meta[property="og:image"]').attr('content');
+      let ogTitle = $('meta[property="og:title"]').attr('content') || '';
+
+      // Fallback: Check if URL has og_info (TikTok often puts product info here during redirects)
+      try {
+        const urlObj = new URL(expandedUrl);
+        const ogInfoParam = urlObj.searchParams.get('og_info');
+        if (ogInfoParam) {
+          const ogInfo = JSON.parse(ogInfoParam);
+          if (!ogTitle && ogInfo.title) ogTitle = ogInfo.title;
+          if (ogInfo.image) {
+            ogImage = ogInfo.image;
+            // Add ogInfo.image to images list if it's not already there
+            if (!images.includes(ogInfo.image)) {
+              images.push(ogInfo.image);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Could not parse og_info from URL query params:', e.message);
+      }
+
+
+
+      // Fallback: If no images found but we have an ogImage, use it
+      if (images.length === 0 && ogImage) {
+        images.push(ogImage);
+      }
 
       // Download image
       let imagePath = null;
@@ -64,12 +96,14 @@ class TikTokExtractor {
         imagePath = await this.downloadImage(ogImage, videoId);
       }
 
+
       return {
         videoId,
         url: expandedUrl,
         title: ogTitle,
         description,
         imagePath,
+        images,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {

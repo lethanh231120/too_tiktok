@@ -13,10 +13,16 @@ class SoraAutomation {
     if (!this.browser) {
       this.browser = await puppeteer.launch({
         headless: false,
+        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        userDataDir: path.join(__dirname, '../../temp/chrome-user-data'),
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
+          '--disable-blink-features=AutomationControlled',
+          '--window-size=1440,900',
         ],
+        ignoreDefaultArgs: ['--enable-automation'],
+        defaultViewport: null,
       });
     }
     return this.browser;
@@ -59,7 +65,9 @@ class SoraAutomation {
       // Select character
       console.log(`Selecting character: ${characterId}`);
       await this.selectCharacter(page, characterId);
-      await page.waitForTimeout(1000);
+
+      console.log('Waiting a bit before submitting... ⏳');
+      await page.waitForTimeout(4000);
 
       // Submit video generation
       console.log('Submitting video generation...');
@@ -109,55 +117,123 @@ class SoraAutomation {
   }
 
   async enterPrompt(page, prompt) {
+    let promptEntered = false;
     try {
       // Find text area or input field for prompt
-      const promptField = await page.$('textarea[placeholder*="prompt"], input[placeholder*="prompt"]');
-      if (promptField) {
-        await promptField.click();
-        await page.keyboard.type(prompt, { delay: 20 });
-      } else {
-        // Alternative: look for contenteditable element
-        const editableDiv = await page.$('[contenteditable="true"]');
-        if (editableDiv) {
-          await editableDiv.click();
-          await page.keyboard.type(prompt, { delay: 20 });
+      const textarea = await page.$('textarea');
+      if (textarea) {
+        await textarea.click();
+        await new Promise(r => setTimeout(r, 500));
+        await textarea.type(prompt, { delay: 15 });
+        promptEntered = true;
+      }
+
+      if (!promptEntered) {
+        const editable = await page.$('[contenteditable="true"]');
+        if (editable) {
+          await editable.click();
+          await new Promise(r => setTimeout(r, 500));
+          await page.keyboard.type(prompt, { delay: 15 });
+          promptEntered = true;
         }
       }
+
+      if (!promptEntered) {
+        const textbox = await page.$('[role="textbox"]');
+        if (textbox) {
+          await textbox.click();
+          await new Promise(r => setTimeout(r, 500));
+          await page.keyboard.type(prompt, { delay: 15 });
+          promptEntered = true;
+        }
+      }
+
+      this.lastPromptEntered = promptEntered;
     } catch (error) {
       console.warn('Could not enter prompt:', error.message);
     }
   }
 
   async selectCharacter(page, characterId) {
+    if (!characterId) return;
     try {
-      // Look for character selection dropdown or button
-      const characterSelector = await page.$('[data-testid="character-selector"]');
-      if (characterSelector) {
-        await characterSelector.click();
-        await page.waitForTimeout(1000);
+      console.log(`Selecting character: @${characterId}...`);
 
-        // Find and click the specific character
-        const characterOption = await page.$(
-          `[data-character-id="${characterId}"], [title*="${characterId}"]`
-        );
-        if (characterOption) {
-          await characterOption.click();
-        }
-      } else {
-        // Alternative: search for character by name
-        const searchInput = await page.$('input[placeholder*="character"], input[placeholder*="actor"]');
-        if (searchInput) {
-          await searchInput.click();
-          await searchInput.type(characterId);
-          await page.waitForTimeout(1000);
-          
-          // Click first result
-          const firstResult = await page.$('.character-option, .actor-option, [role="option"]');
-          if (firstResult) {
-            await firstResult.click();
+      // Thêm khoảng trắng trước @ nếu cần
+      await page.keyboard.type(' ', { delay: 50 });
+      await new Promise(r => setTimeout(r, 300));
+
+      // Gõ ký tự @ để trigger dropdown mention
+      await page.keyboard.type('@', { delay: 50 });
+      await new Promise(r => setTimeout(r, 2000));
+
+      // Gõ tên nhân vật để search/filter trong dropdown
+      await page.keyboard.type(characterId, { delay: 30 });
+      await new Promise(r => setTimeout(r, 2000));
+
+      // Thử tìm và click vào suggestion item trong dropdown
+      let characterSelected = false;
+
+      try {
+        characterSelected = await page.evaluate((charId) => {
+          // Tìm các dropdown/listbox/menu items
+          const selectors = [
+            '[role="listbox"] [role="option"]',
+            '[role="menu"] [role="menuitem"]',
+            '[data-testid*="mention"]',
+            '[data-testid*="suggestion"]',
+            '[class*="mention"] li',
+            '[class*="suggestion"] li',
+            '[class*="dropdown"] li',
+            '[class*="autocomplete"] li',
+            'ul[role="listbox"] li',
+            '[class*="popup"] li',
+            '[class*="popover"] li',
+          ];
+
+          for (const selector of selectors) {
+            const items = document.querySelectorAll(selector);
+            for (const item of items) {
+              const text = item.textContent.toLowerCase();
+              if (text.includes('create')) continue; // Bỏ qua nút Create
+              if (text.includes(charId.toLowerCase()) || text.includes(charId.split('.').pop())) {
+                item.click();
+                return true;
+              }
+            }
           }
-        }
+
+          // Fallback: tìm bất kỳ element nào chứa text nhân vật và có thể click
+          const allElements = document.querySelectorAll('div, span, li, a, button, p');
+          for (const el of allElements) {
+            const text = el.textContent.trim().toLowerCase();
+            if (text.includes('create')) continue; // Bỏ qua nút Create
+
+            const rect = el.getBoundingClientRect();
+            // Chỉ xét element nhỏ (suggestion item), không phải container lớn
+            if (
+              (text.includes(charId.toLowerCase()) || text.includes(charId.split('.').pop())) &&
+              rect.height > 0 && rect.height < 100 &&
+              rect.width > 0 && rect.width < 500
+            ) {
+              el.click();
+              return true;
+            }
+          }
+
+          return false;
+        }, characterId);
+      } catch (e) {
+        console.warn(`Lỗi khi tìm suggestion: ${e.message}`);
       }
+
+      if (!characterSelected) {
+        // Fallback: nhấn Enter để chọn suggestion đầu tiên (nếu dropdown đã hiển thị)
+        await page.keyboard.press('Enter');
+        await new Promise(r => setTimeout(r, 1000));
+      }
+
+      await new Promise(r => setTimeout(r, 1500));
     } catch (error) {
       console.warn('Could not select character:', error.message);
     }
@@ -165,12 +241,53 @@ class SoraAutomation {
 
   async submitVideoGeneration(page) {
     try {
-      // Find and click generate/submit button
-      const generateButton = await page.$(
-        'button[type="submit"], button:has-text("Generate"), button:has-text("Create"), button[data-testid="generate-button"]'
-      );
-      if (generateButton) {
-        await generateButton.click();
+      console.log('Finalizing page state before submit... ⏳');
+      await new Promise(r => setTimeout(r, 2000));
+
+      let submitted = false;
+      const submitBtn = await page.evaluate(() => {
+        const buttons = Array.from(document.querySelectorAll('button'));
+        for (const btn of buttons) {
+          const text = btn.textContent.toLowerCase().trim();
+          const label = (btn.getAttribute('aria-label') || '').toLowerCase();
+          const testId = btn.getAttribute('data-testid') || '';
+          if (
+            text.includes('generate') || text.includes('create') ||
+            text.includes('submit') || text.includes('send') ||
+            label.includes('generate') || label.includes('submit') ||
+            testId.includes('generate') || testId.includes('submit')
+          ) {
+            return { found: true, disabled: btn.disabled };
+          }
+        }
+        return { found: false };
+      });
+
+      if (submitBtn.found && !submitBtn.disabled) {
+        const buttonEl = await page.evaluateHandle(() => {
+          const buttons = Array.from(document.querySelectorAll('button'));
+          for (const btn of buttons) {
+            const text = btn.textContent.toLowerCase().trim();
+            const label = (btn.getAttribute('aria-label') || '').toLowerCase();
+            const testId = btn.getAttribute('data-testid') || '';
+            if (
+              text.includes('generate') || text.includes('create') ||
+              text.includes('submit') || label.includes('generate') || testId.includes('generate')
+            ) {
+              return btn;
+            }
+          }
+          return null;
+        });
+        if (buttonEl) {
+          await buttonEl.click();
+          submitted = true;
+        }
+      }
+
+      if (!submitted && this.lastPromptEntered) {
+        await page.keyboard.press('Enter');
+        await new Promise(r => setTimeout(r, 2000));
       }
     } catch (error) {
       console.warn('Could not submit video generation:', error.message);

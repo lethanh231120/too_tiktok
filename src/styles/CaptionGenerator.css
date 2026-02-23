@@ -13,30 +13,34 @@
 
 .back-btn {
   padding: 0.5rem 1rem;
-  background: #f0f0f0;
-  border: none;
-  border-radius: 6px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  color: #e1e1e1;
+  transition: all 0.2s ease;
 }
 
 .back-btn:hover {
-  background: #e0e0e0;
+  background: #252525;
+  border-color: #444;
   transform: translateX(-2px);
 }
 
 .header h2 {
   flex: 1;
-  font-size: 1.8rem;
-  color: #333;
+  font-size: 1.6rem;
+  color: #ffffff;
   margin: 0;
+  font-weight: 700;
 }
 
 .content-review {
-  background: #f9f9f9;
+  background: #1a1a1a;
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
+  border: 1px solid #222;
 }
 
 .extracted-content {
@@ -46,8 +50,9 @@
 }
 
 .extracted-content h3 {
-  color: #333;
+  color: #ffffff;
   margin-bottom: 1rem;
+  font-weight: 700;
 }
 
 .content-item {
@@ -56,24 +61,28 @@
 }
 
 .content-item strong {
-  color: #667eea;
+  color: #25f4ee;
   margin-bottom: 0.25rem;
   font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .content-item p {
-  color: #666;
+  color: #b0b0b0;
   line-height: 1.5;
   word-break: break-word;
 }
 
 .image-path {
-  font-size: 0.85rem;
-  font-family: 'Monaco', 'Courier New', monospace;
-  background: white;
+  font-size: 0.8rem;
+  font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+  background: #0d0d0d;
   padding: 0.5rem;
   border-radius: 4px;
   overflow-x: auto;
+  color: #8a8a8a;
 }
 
 .caption-section {
@@ -87,42 +96,46 @@
 .generate-prompt-btn,
 .regenerate-prompt-btn {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #fe2c55;
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .generate-btn:hover:not(:disabled),
 .regenerate-btn:hover:not(:disabled),
 .generate-prompt-btn:hover:not(:disabled),
 .regenerate-prompt-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  background: #e91e4a;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(254, 44, 85, 0.3);
 }
 
 .generate-btn:disabled,
 .regenerate-btn:disabled,
 .generate-prompt-btn:disabled,
 .regenerate-prompt-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .caption-display {
-  background: #f9f9f9;
+  background: #1a1a1a;
   padding: 1.5rem;
-  border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-radius: 12px;
+  border-left: 3px solid #fe2c55;
+  border: 1px solid #222;
+  border-left: 3px solid #fe2c55;
 }
 
 .caption-display h3 {
-  color: #333;
+  color: #ffffff;
   margin-bottom: 1rem;
+  font-weight: 700;
 }
 
 .caption-text {
@@ -132,24 +145,26 @@
 }
 
 .caption-text p {
-  color: #333;
+  color: #e1e1e1;
   line-height: 1.6;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
 .edit-btn {
   align-self: flex-start;
   padding: 0.5rem 1rem;
-  background: #f0f0f0;
-  border: none;
-  border-radius: 6px;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  color: #e1e1e1;
+  transition: all 0.2s ease;
 }
 
 .edit-btn:hover {
-  background: #e0e0e0;
+  background: #252525;
+  border-color: #444;
 }
 
 .caption-edit {
@@ -160,48 +175,53 @@
 
 .caption-edit textarea {
   padding: 1rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
+  border: 1px solid #333;
+  border-radius: 8px;
   font-family: inherit;
   font-size: 1rem;
   resize: vertical;
-  transition: border-color 0.3s ease;
+  transition: border-color 0.2s ease;
+  background: #1a1a1a;
+  color: #ffffff;
 }
 
 .caption-edit textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #fe2c55;
+  box-shadow: 0 0 0 3px rgba(254, 44, 85, 0.15);
 }
 
 .save-btn {
   align-self: flex-start;
   padding: 0.5rem 1rem;
-  background: #4caf50;
-  color: white;
+  background: #25f4ee;
+  color: #000000;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
+  font-weight: 700;
+  transition: all 0.2s ease;
 }
 
 .save-btn:hover {
-  background: #45a049;
+  background: #1ad4ce;
+  transform: translateY(-1px);
 }
 
 .use-caption-btn {
   padding: 0.75rem 1.5rem;
-  background: #4caf50;
-  color: white;
+  background: #25f4ee;
+  color: #000000;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .use-caption-btn:hover {
-  background: #45a049;
-  transform: translateY(-2px);
+  background: #1ad4ce;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(37, 244, 238, 0.2);
 }
