@@ -8,7 +8,9 @@
     "start": "electron .",
     "react-start": "react-scripts start",
     "dev": "npm run start",
-    "react-build": "react-scripts build"
+    "react-build": "react-scripts build",
+    "build": "electron-builder -m --x64 --arm64",
+    "build:dir": "electron-builder --dir"
   },
   "dependencies": {
     "@google/genai": "^1.42.0",
