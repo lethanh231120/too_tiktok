@@ -174,3 +174,29 @@ ipcMain.handle('close-sora-browser', async () => {
   await soraAutomation.closeBrowser();
   return { success: true };
 });
+
+// ── History IPC Handlers ──
+ipcMain.handle('save-history', (event, entry) => {
+  const history = store.get('videoHistory', []);
+  history.unshift({ ...entry, id: Date.now().toString() });
+  // Keep max 50 entries
+  if (history.length > 50) history.length = 50;
+  store.set('videoHistory', history);
+  return { success: true };
+});
+
+ipcMain.handle('load-history', () => {
+  return store.get('videoHistory', []);
+});
+
+ipcMain.handle('delete-history', (event, id) => {
+  const history = store.get('videoHistory', []);
+  const filtered = history.filter(h => h.id !== id);
+  store.set('videoHistory', filtered);
+  return { success: true };
+});
+
+ipcMain.handle('clear-history', () => {
+  store.set('videoHistory', []);
+  return { success: true };
+});

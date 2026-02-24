@@ -12,6 +12,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   invoke: (channel, data) => ipcRenderer.invoke(channel, data),
   openSoraLogin: () => ipcRenderer.invoke('open-sora-login'),
   closeSoraBrowser: () => ipcRenderer.invoke('close-sora-browser'),
+  saveHistory: (entry) => ipcRenderer.invoke('save-history', entry),
+  loadHistory: () => ipcRenderer.invoke('load-history'),
+  deleteHistory: (id) => ipcRenderer.invoke('delete-history', id),
+  clearHistory: () => ipcRenderer.invoke('clear-history'),
   onTiktokDataReceived: (callback) => ipcRenderer.on('tiktok-data-received', callback),
   onVideoCreated: (callback) => ipcRenderer.on('video-created', callback),
 });

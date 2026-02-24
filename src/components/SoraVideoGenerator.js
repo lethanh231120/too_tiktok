@@ -1,7 +1,80 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Video, Key, X, Zap, Sparkles, RefreshCw, CheckCircle2, Download, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, Video, Key, X, Sparkles, RefreshCw, CheckCircle2, Download, Check, Monitor, Smartphone, Clock, Film, ChevronDown, User } from 'lucide-react';
 import '../styles/SoraVideoGenerator.css';
 
+/* ────── Option Pill Selector ────── */
+function OptionPills({ options, value, onChange, disabled, icon: Icon }) {
+  return (
+    <div className="option-pills">
+      {options.map(opt => (
+        <button
+          key={opt.value}
+          className={`option-pill ${value === opt.value ? 'active' : ''}`}
+          onClick={() => !disabled && onChange(opt.value)}
+          disabled={disabled}
+          title={opt.description || opt.label}
+        >
+          {opt.icon && <opt.icon size={16} />}
+          <span className="pill-label">{opt.label}</span>
+          {opt.sub && <span className="pill-sub">{opt.sub}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ────── Custom Select Dropdown ────── */
+function CustomSelect({ options, value, onChange, disabled, placeholder, icon: Icon }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const selected = options.find(o => o.value === value);
+
+  return (
+    <div className={`custom-select ${open ? 'open' : ''} ${disabled ? 'disabled' : ''}`} ref={ref}>
+      <button className="custom-select-trigger" onClick={() => !disabled && setOpen(!open)}>
+        {Icon && <Icon size={16} className="select-icon" />}
+        <span className="select-value">{selected ? selected.label : placeholder}</span>
+        <ChevronDown size={16} className={`select-chevron ${open ? 'rotated' : ''}`} />
+      </button>
+      {open && (
+        <div className="custom-select-dropdown">
+          {options.map(opt => (
+            <button
+              key={opt.value}
+              className={`custom-select-option ${value === opt.value ? 'selected' : ''}`}
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+            >
+              {opt.icon && <opt.icon size={16} />}
+              <span>{opt.label}</span>
+              {value === opt.value && <Check size={14} className="check-icon" />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ────── Toggle Switch ────── */
+function ToggleSwitch({ checked, onChange, label }) {
+  return (
+    <label className="toggle-switch">
+      <div className={`toggle-track ${checked ? 'on' : ''}`} onClick={() => onChange(!checked)}>
+        <div className="toggle-thumb" />
+      </div>
+      <span className="toggle-label-text">{label}</span>
+    </label>
+  );
+}
+
+/* ────── Main Component ────── */
 function SoraVideoGenerator({
   tiktokData,
   caption,
@@ -12,7 +85,7 @@ function SoraVideoGenerator({
   onBack,
 }) {
   const [characterId, setCharacterId] = useState('vuluu2k.thao');
-  const [resolution, setResolution] = useState('16:9');
+  const [resolution, setResolution] = useState('9:16');
   const [duration, setDuration] = useState('10s');
   const [videoCount, setVideoCount] = useState('1');
   const [soraPrompt, setSoraPrompt] = useState('');
@@ -23,15 +96,17 @@ function SoraVideoGenerator({
   const [downloadPath, setDownloadPath] = useState('');
   const [error, setError] = useState('');
 
-  React.useEffect(() => {
-    // Load config on mount
+  useEffect(() => {
+    const validResolutions = ['9:16', '16:9'];
+    const validDurations = ['10s', '15s'];
+    const validCounts = ['1', '2', '3'];
     const loadConfig = async () => {
       try {
         const config = await window.electronAPI.loadConfig();
         if (config.characterId) setCharacterId(config.characterId);
-        if (config.resolution) setResolution(config.resolution);
-        if (config.duration) setDuration(config.duration);
-        if (config.videoCount) setVideoCount(config.videoCount);
+        if (config.resolution && validResolutions.includes(config.resolution)) setResolution(config.resolution);
+        if (config.duration && validDurations.includes(config.duration)) setDuration(config.duration);
+        if (config.videoCount && validCounts.includes(config.videoCount)) setVideoCount(config.videoCount);
       } catch (err) {
         console.error('Error loading config:', err);
       }
@@ -39,8 +114,7 @@ function SoraVideoGenerator({
     loadConfig();
   }, []);
 
-  React.useEffect(() => {
-    // Save config when changed
+  useEffect(() => {
     const saveConfig = async () => {
       try {
         const currentConfig = await window.electronAPI.loadConfig();
@@ -65,7 +139,6 @@ function SoraVideoGenerator({
 
     try {
       const content = `${tiktokData.title} - ${tiktokData.description} - Caption: ${caption}`;
-
       const result = await window.electronAPI.generateSoraPrompt(content);
 
       if (result.success) {
@@ -92,7 +165,6 @@ function SoraVideoGenerator({
     addProgress('🎥 Đang bắt đầu quy trình tạo video Sora...');
 
     try {
-      // Step 1: Submission
       const submitResult = await window.electronAPI.createSoraVideo({
         imageData: tiktokData.imagePath,
         prompt: soraPrompt || caption,
@@ -109,14 +181,12 @@ function SoraVideoGenerator({
         }
         addProgress('✓ Đã gửi yêu cầu lên Sora. Đang chờ render...');
 
-        // Step 2: Polling
         const pollResult = await window.electronAPI.pollSoraResult();
 
         if (pollResult.success) {
           setVideoUrl(pollResult.videoUrl);
           addProgress('✓ Video đã render xong!');
 
-          // Step 3: Auto Download
           if (autoDownload) {
             addProgress('📥 Đang tự động tải video về máy...');
             const filename = `tiktok_video_${Date.now()}.mp4`;
@@ -132,6 +202,24 @@ function SoraVideoGenerator({
               addProgress(`✗ Lỗi tải về: ${downloadResult.error}`);
             }
           }
+
+          // Save to history
+          await window.electronAPI.saveHistory({
+            title: tiktokData.title || 'Video',
+            description: tiktokData.description || '',
+            caption,
+            prompt: soraPrompt,
+            characterId,
+            resolution,
+            duration,
+            videoCount,
+            videoUrls: Array.isArray(pollResult.videoUrl)
+              ? pollResult.videoUrl
+              : [pollResult.videoUrl].filter(Boolean),
+            images: tiktokData.images || [],
+            imagePath: tiktokData.imagePath || '',
+            timestamp: new Date().toISOString(),
+          });
 
           onVideoCreated();
         } else {
@@ -170,15 +258,32 @@ function SoraVideoGenerator({
     }
   };
 
-  const commonCharacters = [
-    'vuluu2k.thao',
-    'character_default',
-    'character_anime',
-    'character_realistic',
+  const resolutionOptions = [
+    { value: '9:16', label: 'Dọc', sub: '9:16', icon: Smartphone },
+    { value: '16:9', label: 'Ngang', sub: '16:9', icon: Monitor },
+  ];
+
+  const durationOptions = [
+    { value: '10s', label: '10s' },
+    { value: '15s', label: '15s' },
+  ];
+
+  const videoCountOptions = [
+    { value: '1', label: '1' },
+    { value: '2', label: '2' },
+    { value: '3', label: '3' },
+  ];
+
+  const characterOptions = [
+    { value: 'vuluu2k.thao', label: '@vuluu2k.thao' },
+    { value: 'character_default', label: 'Default Character' },
+    { value: 'character_anime', label: 'Anime Style' },
+    { value: 'character_realistic', label: 'Realistic' },
   ];
 
   return (
     <div className="sora-video-generator">
+      {/* Header */}
       <div className="header">
         <button className="back-btn" onClick={onBack}>
           <ArrowLeft size={18} /> Quay lại
@@ -186,6 +291,7 @@ function SoraVideoGenerator({
         <h2>Tạo Video bằng Sora</h2>
       </div>
 
+      {/* Summary */}
       <div className="summary">
         <h3>Tóm tắt nội dung</h3>
         <div className="summary-items">
@@ -217,91 +323,103 @@ function SoraVideoGenerator({
         </div>
       </div>
 
+      {/* Configuration */}
       <div className="configuration">
-        <div className="config-section">
-          <label>Nhân vật (Character)</label>
+        {/* Character */}
+        <div className="config-card">
+          <div className="config-card-header">
+            <User size={18} className="config-icon" />
+            <label>Nhân vật (Character)</label>
+          </div>
+          <CustomSelect
+            options={characterOptions}
+            value={characterId}
+            onChange={setCharacterId}
+            disabled={isLoading}
+            placeholder="Chọn nhân vật"
+            icon={User}
+          />
           <input
             type="text"
-            list="character-options"
+            className="character-input"
             value={characterId}
             onChange={(e) => setCharacterId(e.target.value)}
             disabled={isLoading}
-            placeholder="Nhập hoặc chọn ID nhân vật"
+            placeholder="Hoặc nhập ID nhân vật tùy chỉnh..."
           />
-          <datalist id="character-options">
-            {commonCharacters.map(char => (
-              <option key={char} value={char}>{char}</option>
-            ))}
-          </datalist>
-          <p className="hint">Nhập ID nhân vật tùy chỉnh hoặc chọn từ danh sách</p>
         </div>
 
-        <div className="config-section" style={{ display: 'flex', gap: '1rem' }}>
-          <div style={{ flex: 1 }}>
-            <label>Khung hình</label>
-            <input
-              type="text"
-              list="resolution-options"
+        {/* Video Settings Row */}
+        <div className="settings-grid">
+          {/* Resolution */}
+          <div className="config-card">
+            <div className="config-card-header">
+              <Monitor size={18} className="config-icon" />
+              <label>Khung hình</label>
+            </div>
+            <OptionPills
+              options={resolutionOptions}
               value={resolution}
-              onChange={(e) => setResolution(e.target.value)}
+              onChange={setResolution}
               disabled={isLoading}
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
             />
-            <datalist id="resolution-options">
-              <option value="16:9">Ngang (16:9)</option>
-              <option value="9:16">Dọc (9:16)</option>
-            </datalist>
           </div>
-          <div style={{ flex: 1 }}>
-            <label>Thời lượng</label>
-            <input
-              type="text"
-              list="duration-options"
+
+          {/* Duration */}
+          <div className="config-card">
+            <div className="config-card-header">
+              <Clock size={18} className="config-icon" />
+              <label>Thời lượng</label>
+            </div>
+            <OptionPills
+              options={durationOptions}
               value={duration}
-              onChange={(e) => setDuration(e.target.value)}
+              onChange={setDuration}
               disabled={isLoading}
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
             />
-            <datalist id="duration-options">
-              <option value="10s">10 giây</option>
-              <option value="15s">15 giây</option>
-            </datalist>
           </div>
-          <div style={{ flex: 1 }}>
-            <label>Số lượng</label>
-            <input
-              type="text"
-              list="videocount-options"
+
+          {/* Video Count */}
+          <div className="config-card">
+            <div className="config-card-header">
+              <Film size={18} className="config-icon" />
+              <label>Số lượng</label>
+            </div>
+            <OptionPills
+              options={videoCountOptions}
               value={videoCount}
-              onChange={(e) => setVideoCount(e.target.value)}
+              onChange={setVideoCount}
               disabled={isLoading}
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
             />
-            <datalist id="videocount-options">
-              <option value="1">1 Video</option>
-              <option value="2">2 Video</option>
-              <option value="3">3 Video</option>
-            </datalist>
           </div>
         </div>
 
-        <div className="config-section">
-          <label>Video Prompt</label>
+        {/* Prompt */}
+        <div className="config-card prompt-card">
+          <div className="config-card-header">
+            <Sparkles size={18} className="config-icon sparkle" />
+            <label>Video Prompt</label>
+          </div>
           {!soraPrompt ? (
             <button
               onClick={handleGenerateSoraPrompt}
               disabled={isGeneratingPrompt}
               className="generate-prompt-btn"
             >
-              {isGeneratingPrompt ? '⏳ Đang tạo...' : <><Sparkles size={18} /> Tạo Smart Prompt</>}
+              {isGeneratingPrompt ? (
+                <><span className="btn-spinner" /> Đang tạo...</>
+              ) : (
+                <><Sparkles size={18} /> Tạo Smart Prompt</>
+              )}
             </button>
           ) : (
             <>
               <textarea
                 value={soraPrompt}
                 onChange={(e) => setSoraPrompt(e.target.value)}
-                rows="6"
+                rows="5"
                 disabled={isLoading}
+                className="prompt-textarea"
               />
               <button
                 onClick={handleGenerateSoraPrompt}
@@ -319,8 +437,15 @@ function SoraVideoGenerator({
           </p>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {/* Error */}
+        {error && (
+          <div className="error-message">
+            <span className="error-icon">⚠</span>
+            {error}
+          </div>
+        )}
 
+        {/* Submission Verification */}
         {submissionScreenshot && (
           <div className="submission-verification">
             <h4><CheckCircle2 size={16} color="#25f4ee" /> Xác nhận đã gửi tới Sora</h4>
@@ -334,14 +459,11 @@ function SoraVideoGenerator({
             </div>
 
             <div className="auto-download-control">
-              <label className="toggle-label">
-                <input
-                  type="checkbox"
-                  checked={autoDownload}
-                  onChange={(e) => setAutoDownload(e.target.checked)}
-                />
-                <span className="toggle-text">Tự động tải video về khi xong</span>
-              </label>
+              <ToggleSwitch
+                checked={autoDownload}
+                onChange={setAutoDownload}
+                label="Tự động tải video về khi xong"
+              />
             </div>
 
             {videoUrl && (
@@ -361,13 +483,18 @@ function SoraVideoGenerator({
           </div>
         )}
 
+        {/* Actions */}
         <div className="action-buttons">
           <button
             onClick={handleCreateVideo}
             disabled={isLoading || !soraPrompt}
             className="create-video-btn"
           >
-            {isLoading ? '⏳ Đang tạo video...' : <><Video size={20} /> Tạo Video với Sora</>}
+            {isLoading ? (
+              <><span className="btn-spinner" /> Đang tạo video...</>
+            ) : (
+              <><Video size={20} /> Tạo Video với Sora</>
+            )}
           </button>
 
           <div className="secondary-actions">

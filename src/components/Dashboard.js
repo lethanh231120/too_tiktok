@@ -5,6 +5,7 @@ import CaptionGenerator from './CaptionGenerator';
 import SoraVideoGenerator from './SoraVideoGenerator';
 import ProgressTracker from './ProgressTracker';
 import SettingsModal from './SettingsModal';
+import VideoHistory from './VideoHistory';
 import { Settings } from 'lucide-react';
 
 function Dashboard() {
@@ -43,6 +44,19 @@ function Dashboard() {
     setTiktokData(null);
     setCaption('');
     setProgress([]);
+  };
+
+  const handleReuseHistory = (entry) => {
+    // Prefill data from history entry
+    setTiktokData({
+      title: entry.title || '',
+      description: entry.description || '',
+      images: entry.images || [],
+      imagePath: entry.imagePath || '',
+    });
+    setCaption(entry.caption || '');
+    setCurrentStep(2);
+    addProgress('♻️ Đang tạo lại từ lịch sử...');
   };
 
   return (
@@ -87,12 +101,15 @@ function Dashboard() {
       <div className="dashboard-container">
         <div className="main-content">
           {currentStep === 0 && (
-            <TikTokForm
-              onDataExtracted={handleTiktokDataExtracted}
-              setIsLoading={setIsLoading}
-              isLoading={isLoading}
-              addProgress={addProgress}
-            />
+            <>
+              <VideoHistory onReuse={handleReuseHistory} />
+              <TikTokForm
+                onDataExtracted={handleTiktokDataExtracted}
+                setIsLoading={setIsLoading}
+                isLoading={isLoading}
+                addProgress={addProgress}
+              />
+            </>
           )}
 
           {currentStep === 1 && tiktokData && (
