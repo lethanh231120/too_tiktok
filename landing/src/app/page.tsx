@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Download, Monitor, Apple, ArrowRight, Video, Sparkles, Zap } from "lucide-react";
+import { Download, Monitor, Apple, ArrowRight, Video, Sparkles, Zap, MessageCircle, Phone, Mail, Github, Facebook } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
@@ -44,6 +44,7 @@ export default function Home() {
         <div className="flex items-center gap-6">
           <button onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Tính năng</button>
           <button onClick={() => document.getElementById("guide")?.scrollIntoView({ behavior: "smooth" })} className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Hướng dẫn</button>
+          <button onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })} className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Liên hệ</button>
         </div>
       </nav>
 
@@ -255,7 +256,80 @@ export default function Home() {
         </motion.div>
       </div>
 
-      <footer className="border-t border-white/10 bg-black/40 py-8 text-center text-zinc-500 text-sm mt-12 pb-12">
+      {/* Contact Section */}
+      <section id="contact" className="w-full pt-16 mt-8 flex flex-col items-center relative z-20 pb-20">
+        <div className="w-full max-w-4xl px-4 text-center">
+          <h2 className="text-2xl md:text-4xl font-bold mb-4">Bạn cần hỗ trợ?</h2>
+          <p className="text-zinc-400 mb-10 max-w-lg mx-auto">Nếu bạn có câu hỏi về việc cài đặt hoặc sử dụng phần mềm, đừng ngần ngại liên hệ trực tiếp với chúng tôi qua các kênh sau:</p>
+          
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-8 bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md text-left transition-all hover:bg-white/[0.08]">
+            <div className="flex-shrink-0">
+              <div className="w-40 h-40 md:w-48 md:h-48 rounded-2xl overflow-hidden border-2 border-white/10 shadow-xl shadow-black/50">
+                <img src="/avatar.jpg" alt="Vũ Lưu" className="w-full h-full object-cover" />
+              </div>
+            </div>
+            <div className="flex flex-col flex-grow justify-center py-2 h-full">
+               <h3 className="text-2xl font-bold text-white mb-2 text-center md:text-left">Vũ Lưu (vuluu2k)</h3>
+               <p className="text-zinc-400 mb-8 max-w-md text-center md:text-left text-sm md:text-base leading-relaxed">
+                 Xin chào, mình là nhà phát triển của TikTokGen. Nếu bạn có gặp bất kỳ khó khăn nào trong quá trình cài đặt hay tối ưu quy trình Affiliate, hãy liên hệ ngay để được hỗ trợ tốt nhất!
+               </p>
+               <div className="flex flex-wrap gap-3 w-full">
+                  <a href="https://zalo.me/0823489529" target="_blank" rel="noopener noreferrer" className="flex-1 min-w-[140px] flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-all group">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <MessageCircle className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Zalo</span>
+                      <span className="text-sm font-bold text-white">0823489529</span>
+                    </div>
+                  </a>
+                  
+                  <a href="tel:0823489529" className="flex-1 min-w-[140px] flex items-center gap-3 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all group">
+                    <div className="w-10 h-10 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <Phone className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Hotline</span>
+                      <span className="text-sm font-bold text-white">0823489529</span>
+                    </div>
+                  </a>
+                  
+                  <a href="mailto:vuluu040320@gmail.com" className="flex-1 min-w-[140px] flex items-center gap-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-all group">
+                    <div className="w-10 h-10 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <Mail className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Email</span>
+                      <span className="text-sm font-bold text-white truncate text-ellipsis max-w-[120px]" title="vuluu040320@gmail.com">vuluu0403...</span>
+                    </div>
+                  </a>
+
+                  <a href="https://github.com/vuluu2k" target="_blank" rel="noopener noreferrer" className="flex-1 min-w-[140px] flex items-center gap-3 p-3 rounded-xl bg-zinc-500/10 border border-zinc-500/20 hover:bg-zinc-500/20 transition-all group">
+                    <div className="w-10 h-10 rounded-lg bg-zinc-500/20 text-zinc-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <Github className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Github</span>
+                      <span className="text-sm font-bold text-white">vuluu2k</span>
+                    </div>
+                  </a>
+
+                  <a href="https://facebook.com/vuluu2k" target="_blank" rel="noopener noreferrer" className="flex-1 min-w-[140px] flex items-center gap-3 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all group">
+                    <div className="w-10 h-10 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                      <Facebook className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Facebook</span>
+                      <span className="text-sm font-bold text-white">vuluu2k</span>
+                    </div>
+                  </a>
+               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-white/10 bg-black/40 py-8 text-center text-zinc-500 text-sm pb-12">
         <div className="flex justify-center items-center gap-2 mb-2">
           <img src="/logo.png" alt="Logo" className="w-5 h-5 opacity-50 grayscale" />
           <span className="font-semibold text-zinc-400">TikTokGen</span>
