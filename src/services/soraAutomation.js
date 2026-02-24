@@ -2,12 +2,18 @@ const puppeteer = require('puppeteer');
 const fs = require('fs-extra');
 const path = require('path');
 const os = require('os');
+const EventEmitter = require('events');
 
-class SoraAutomation {
+class SoraAutomation extends EventEmitter {
   constructor() {
+    super();
     this.browser = null;
     this.soraUrl = 'https://sora.chatgpt.com';
     this.maxRetries = 3;
+  }
+
+  emitProgress(status, detail = '') {
+    this.emit('progress', { status, detail, timestamp: Date.now() });
   }
 
   async initBrowser() {
@@ -100,6 +106,7 @@ class SoraAutomation {
       await this.selectCharacter(page, characterId);
 
       // Apply video settings: resolution, duration, videoCount
+      this.emitProgress('⚙️ Đang cấu hình video...', `${resolution} | ${duration} | ${videoCount} video`);
       console.log(`Setting options -> Resolution: ${resolution}, Duration: ${duration}, Count: ${videoCount}`);
       await this.applyVideoSettings(page, { resolution, duration, videoCount });
 
@@ -107,6 +114,7 @@ class SoraAutomation {
       await new Promise(r => setTimeout(r, 4000));
 
       // Submit video generation
+      this.emitProgress('🚀 Đang gửi yêu cầu tạo video...');
       console.log('Submitting video generation...');
       await this.submitVideoGeneration(page);
 
@@ -115,14 +123,13 @@ class SoraAutomation {
       await new Promise(r => setTimeout(r, 5000));
 
       // Screenshot after submit
-      const fs = require('fs-extra');
-      const path = require('path');
       const tempDir = path.join(__dirname, '../../temp');
       await fs.ensureDir(tempDir);
       await page.screenshot({ path: path.join(tempDir, 'sora_after_submit.png') });
       console.log('Current URL after submit:', page.url());
 
       // Navigate to drafts page to monitor video generation
+      this.emitProgress('📋 Đang chuyển sang trang Drafts...');
       console.log('Navigating to drafts page...');
       try {
         await page.goto('https://sora.chatgpt.com/drafts', { waitUntil: 'networkidle2', timeout: 30000 });
@@ -141,6 +148,7 @@ class SoraAutomation {
       console.log(`Existing drafts on page: ${existingDraftCount}`);
 
       // Wait for video to be generated on drafts page
+      this.emitProgress('⏳ Đang chờ video render...', `Đã có ${existingDraftCount} drafts`);
       console.log('Waiting for video generation to complete on drafts page...');
       const videoResult = await this.waitForVideoOnDrafts(page, 600000, existingDraftCount);
 
@@ -359,8 +367,6 @@ class SoraAutomation {
   async applyVideoSettings(page, { resolution, duration, videoCount }) {
     try {
       console.log('Interacting with Sora UI for video settings...');
-      const fs = require('fs-extra');
-      const path = require('path');
       const tempDir = path.join(__dirname, '../../../temp');
       await fs.ensureDir(tempDir);
 
@@ -677,8 +683,6 @@ class SoraAutomation {
 
   async waitForVideoOnDrafts(page, timeout = 600000, previousDraftCount = 0) {
     const startTime = Date.now();
-    const fs = require('fs-extra');
-    const path = require('path');
     const tempDir = path.join(__dirname, '../../../temp');
     await fs.ensureDir(tempDir);
 
@@ -732,16 +736,27 @@ class SoraAutomation {
           console.log('  Drafts:', JSON.stringify(draftStatus.drafts.slice(0, 5)));
         }
 
+        // Emit progress to UI
+        if (draftStatus.renderingCount > 0) {
+          const mins = Math.floor(elapsed / 60);
+          const secs = elapsed % 60;
+          this.emitProgress(`⏳ Đang render video... (${mins}:${secs.toString().padStart(2, '0')})`, `${draftStatus.renderingCount} video đang xử lý | ${newDraftsTotal} video mới`);
+        } else if (newDraftsTotal === 0) {
+          this.emitProgress('⏳ Đang chờ video xuất hiện...', `Đã chờ ${elapsed}s`);
+        }
+
         // Done: new drafts appeared AND none are still rendering
         if (newDraftsTotal > 0 && draftStatus.renderingCount === 0) {
           const newHrefs = draftStatus.completedHrefs.slice(0, newDraftsTotal);
           console.log(`${newDraftsTotal} new videos completed!`, newHrefs);
+          this.emitProgress(`✅ ${newDraftsTotal} video đã render xong!`, 'Đang chuẩn bị post...');
           await page.screenshot({ path: path.join(tempDir, 'sora_drafts_completed.png') });
 
           // Phase 1.5: Click each new draft to post it
           for (let i = 0; i < newHrefs.length; i++) {
             try {
               console.log(`Posting video ${i + 1}/${newHrefs.length}...`);
+              this.emitProgress(`📤 Đang post video ${i + 1}/${newHrefs.length}...`);
               const clicked = await page.evaluate((targetHref) => {
                 const link = document.querySelector(`a[href="${targetHref}"]`);
                 if (link) { link.click(); return true; }

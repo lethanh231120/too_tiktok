@@ -18,4 +18,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   clearHistory: () => ipcRenderer.invoke('clear-history'),
   onTiktokDataReceived: (callback) => ipcRenderer.on('tiktok-data-received', callback),
   onVideoCreated: (callback) => ipcRenderer.on('video-created', callback),
+  onSoraProgress: (callback) => {
+    const handler = (event, data) => callback(data);
+    ipcRenderer.on('sora-progress', handler);
+    return () => ipcRenderer.removeListener('sora-progress', handler);
+  },
 });

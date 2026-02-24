@@ -106,7 +106,20 @@ ipcMain.handle('create-sora-video', async (event, { imageData, prompt, character
     const soraAutomation = require('./src/services/soraAutomation');
     const options = { characterId, resolution, duration, videoCount };
     console.log('[main] Starting Sora submission with options:', options);
+
+    // Relay progress events to renderer
+    const progressHandler = (data) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('sora-progress', data);
+      }
+    };
+    soraAutomation.on('progress', progressHandler);
+
     const result = await soraAutomation.createVideoWithCharacter(imageData, prompt, options);
+
+    // Clean up listener
+    soraAutomation.removeListener('progress', progressHandler);
+
     console.log('[main] Submission result:', result.success ? 'Success' : `Failed (NeedLogin: ${!!result.needLogin})`);
     return result;
   } catch (error) {

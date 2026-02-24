@@ -95,6 +95,7 @@ function SoraVideoGenerator({
   const [videoUrl, setVideoUrl] = useState(null);
   const [downloadPath, setDownloadPath] = useState('');
   const [error, setError] = useState('');
+  const [renderProgress, setRenderProgress] = useState(null);
 
   useEffect(() => {
     const validResolutions = ['9:16', '16:9'];
@@ -112,6 +113,15 @@ function SoraVideoGenerator({
       }
     };
     loadConfig();
+  }, []);
+
+  // Listen for real-time progress from backend
+  useEffect(() => {
+    if (!window.electronAPI.onSoraProgress) return;
+    const cleanup = window.electronAPI.onSoraProgress((data) => {
+      setRenderProgress(data);
+    });
+    return cleanup;
   }, []);
 
   useEffect(() => {
@@ -162,6 +172,7 @@ function SoraVideoGenerator({
     setSubmissionScreenshot(null);
     setVideoUrl(null);
     setDownloadPath('');
+    setRenderProgress(null);
     addProgress('🎥 Đang bắt đầu quy trình tạo video Sora...');
 
     try {
@@ -344,7 +355,6 @@ function SoraVideoGenerator({
             className="character-input"
             value={characterId}
             onChange={(e) => setCharacterId(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
             disabled={isLoading}
             placeholder="Hoặc nhập ID nhân vật tùy chỉnh..."
           />
@@ -443,6 +453,19 @@ function SoraVideoGenerator({
           <div className="error-message">
             <span className="error-icon">⚠</span>
             {error}
+          </div>
+        )}
+
+        {/* Render Progress */}
+        {isLoading && renderProgress && (
+          <div className="render-progress-panel">
+            <div className="render-progress-header">
+              <div className="render-progress-pulse"></div>
+              <span className="render-progress-status">{renderProgress.status}</span>
+            </div>
+            {renderProgress.detail && (
+              <p className="render-progress-detail">{renderProgress.detail}</p>
+            )}
           </div>
         )}
 
