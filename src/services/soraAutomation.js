@@ -312,74 +312,181 @@ class SoraAutomation {
   async applyVideoSettings(page, { resolution, duration, videoCount }) {
     try {
       console.log('Interacting with Sora UI for video settings...');
+      const fs = require('fs-extra');
+      const path = require('path');
+      const tempDir = path.join(__dirname, '../../../temp');
+      await fs.ensureDir(tempDir);
 
-      await page.evaluate(async (settings) => {
-        const { resolution, duration, videoCount } = settings;
-        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+      // Helper: dump all visible menu items for diagnostics
+      const dumpMenuItems = async (label) => {
+        const items = await page.evaluate(() => {
+          const els = document.querySelectorAll('div[role="menuitem"], div[role="option"], div[role="radio"], div[role="menuitemradio"], [data-radix-collection-item], [data-state]');
+          return Array.from(els).map(el => {
+            const rect = el.getBoundingClientRect();
+            return {
+              tag: el.tagName,
+              role: el.getAttribute('role'),
+              text: el.textContent.trim().substring(0, 80),
+              dataState: el.getAttribute('data-state'),
+              visible: rect.width > 0 && rect.height > 0,
+              w: Math.round(rect.width),
+              h: Math.round(rect.height)
+            };
+          }).filter(i => i.visible && i.text.length > 0);
+        });
+        console.log(`--- ${label} (${items.length} items) ---`);
+        items.forEach((item, i) => console.log(`  [${i}] ${item.tag} role=${item.role} state=${item.dataState} "${item.text}"`));
+        console.log('---');
+        return items;
+      };
 
-        // Helper block to find elements containing any of the text alternatives
-        const clickOptionByText = async (texts) => {
-          // Broad list of selectors where Sora might place buttons and labels
-          const selectors = [
-            'button',
-            '[role="button"]',
-            '[role="option"]',
-            '[role="menuitem"]',
-            '[role="tab"]',
-            '[role="radio"]',
-            'div[class*="item"]',
-            'div[class*="option"]',
-            'span',
-            'li'
-          ];
-
-          for (const selector of selectors) {
-            const elements = document.querySelectorAll(selector);
-            for (const el of elements) {
-              const elText = el.textContent.trim().toLowerCase();
-              if (!elText) continue;
-
-              // Exact match or contains for special formats
-              const match = texts.some(t => {
-                const searchStr = t.toLowerCase();
-                // To avoid clicking "16" in "16:9" when looking for "1", we can check if it's the exact string
-                // or contains it safely.
-                return elText === searchStr || elText.includes(searchStr);
-              });
-
-              if (match) {
-                // Click and yield to allow UI updates (e.g. dropdown opening/closing)
-                el.click();
-                await wait(800);
-                return true;
+      // Helper: click a menu item by text, returns true if clicked
+      const clickMenuItemByText = async (searchTexts, logLabel) => {
+        console.log(`  Looking for: [${searchTexts.join(', ')}]`);
+        const result = await page.evaluate((texts) => {
+          // Search broadly in all interactive elements
+          const allElements = document.querySelectorAll('div[role="menuitem"], div[role="option"], div[role="radio"], div[role="menuitemradio"], button, [data-radix-collection-item]');
+          for (const el of allElements) {
+            const elText = (el.textContent || '').trim().toLowerCase();
+            if (!elText) continue;
+            for (const t of texts) {
+              const searchStr = t.toLowerCase();
+              if (elText.includes(searchStr)) {
+                const rect = el.getBoundingClientRect();
+                if (rect.width > 0 && rect.height > 0) {
+                  el.click();
+                  return { clicked: true, matchedText: elText, searchedFor: t };
+                }
               }
             }
           }
-          return false;
-        };
+          return { clicked: false };
+        }, searchTexts);
 
-        // 1. Resolution
-        const resTexts = resolution === '16:9' ? ['16:9', 'ngang', 'landscape', 'màn hình ngang'] : ['9:16', 'dọc', 'portrait', 'màn hình dọc'];
-        await clickOptionByText(resTexts);
+        if (result.clicked) {
+          console.log(`  ✅ Clicked: "${result.matchedText}" (matched "${result.searchedFor}")`);
+        } else {
+          console.log(`  ❌ Not found`);
+        }
+        await new Promise(r => setTimeout(r, 1000));
+        return result.clicked;
+      };
 
-        // Try again in case the first click only opened a menu
-        await clickOptionByText(resTexts);
+      // Helper: click a RADIO sub-menu item by text (only targets menuitemradio elements)
+      const clickRadioByText = async (searchTexts, logLabel) => {
+        console.log(`  Looking for radio: [${searchTexts.join(', ')}]`);
+        const result = await page.evaluate((texts) => {
+          // ONLY target menuitemradio elements - these are the actual selectable sub-menu options
+          const allElements = document.querySelectorAll('div[role="menuitemradio"]');
+          for (const el of allElements) {
+            const elText = (el.textContent || '').trim().toLowerCase();
+            if (!elText) continue;
+            for (const t of texts) {
+              const searchStr = t.toLowerCase();
+              if (elText === searchStr || elText.includes(searchStr)) {
+                const rect = el.getBoundingClientRect();
+                if (rect.width > 0 && rect.height > 0) {
+                  el.click();
+                  return { clicked: true, matchedText: elText, searchedFor: t };
+                }
+              }
+            }
+          }
+          return { clicked: false };
+        }, searchTexts);
 
-        // 2. Duration
-        const durTexts = [duration, `${duration}s`, duration.replace('s', ' giây')];
-        await clickOptionByText(durTexts);
-        await clickOptionByText(durTexts);
+        if (result.clicked) {
+          console.log(`  ✅ Radio clicked: "${result.matchedText}" (matched "${result.searchedFor}")`);
+        } else {
+          console.log(`  ❌ Radio not found`);
+        }
+        await new Promise(r => setTimeout(r, 1000));
+        return result.clicked;
+      };
 
-        // 3. Count
-        const countTexts = [`${videoCount} variation`, `variations: ${videoCount}`, `số lượng: ${videoCount}`, `x${videoCount}`, `${videoCount} video`];
-        await clickOptionByText(countTexts);
-        await clickOptionByText(countTexts);
+      // ===== Step 1: Open the Settings popup =====
+      console.log('Step 1: Opening settings menu...');
+      const settingsButtons = await page.$$('button[aria-label="Settings"]');
 
-      }, { resolution, duration, videoCount });
+      if (settingsButtons.length > 0) {
+        const targetBtn = settingsButtons[settingsButtons.length - 1];
+        await targetBtn.click();
+        console.log(`Clicked Settings button (found ${settingsButtons.length}, clicked last).`);
+        await new Promise(r => setTimeout(r, 1500));
+      } else {
+        console.warn('Could not find Settings button!');
+        return;
+      }
 
-      await new Promise(r => setTimeout(r, 2000));
+      // Dump what's visible in the settings popup
+      await dumpMenuItems('Settings popup items');
+      await page.screenshot({ path: path.join(tempDir, 'sora_settings_menu_open.png') });
+
+      // ===== Step 2: Set Orientation =====
+      const desiredOrientation = resolution === '16:9' ? 'landscape' : 'portrait';
+      console.log(`Step 2: Setting orientation to ${desiredOrientation}...`);
+
+      const clickedOrientationRow = await clickMenuItemByText(['orientation', 'hướng'], 'Orientation row');
+      if (clickedOrientationRow) {
+        await new Promise(r => setTimeout(r, 1000));
+        // Dump sub-menu items
+        await dumpMenuItems('Orientation sub-menu');
+        await page.screenshot({ path: path.join(tempDir, 'sora_orientation_submenu.png') });
+
+        // Select the desired orientation
+        const orientationTexts = resolution === '16:9'
+          ? ['landscape', 'ngang', '16:9']
+          : ['portrait', 'dọc', '9:16'];
+        await clickRadioByText(orientationTexts, 'Orientation value');
+
+        await new Promise(r => setTimeout(r, 800));
+      } else {
+        console.warn('Could not find Orientation menu item.');
+      }
+
+      // ===== Step 3: Set Duration =====
+      const durationValue = duration.replace('s', '');
+      console.log(`Step 3: Setting duration to ${duration}...`);
+
+      const clickedDurationRow = await clickMenuItemByText(['duration', 'thời lượng'], 'Duration row');
+      if (clickedDurationRow) {
+        await new Promise(r => setTimeout(r, 1000));
+        await dumpMenuItems('Duration sub-menu');
+        await page.screenshot({ path: path.join(tempDir, 'sora_duration_submenu.png') });
+
+        await clickRadioByText([`${durationValue} seconds`, `${durationValue}s`, duration], 'Duration value');
+
+        await new Promise(r => setTimeout(r, 800));
+      } else {
+        console.warn('Could not find Duration menu item.');
+      }
+
+      // ===== Step 4: Set Video count =====
+      console.log(`Step 4: Setting video count to ${videoCount}...`);
+
+      const clickedVideosRow = await clickMenuItemByText(['videos', 'số lượng'], 'Videos row');
+      if (clickedVideosRow) {
+        await new Promise(r => setTimeout(r, 1000));
+        await dumpMenuItems('Videos sub-menu');
+        await page.screenshot({ path: path.join(tempDir, 'sora_videos_submenu.png') });
+
+        await clickRadioByText([`${videoCount} video`], 'Video count value');
+
+        await new Promise(r => setTimeout(r, 800));
+      } else {
+        console.warn('Could not find Videos menu item.');
+      }
+
+      // Final screenshot
+      await page.screenshot({ path: path.join(tempDir, 'sora_after_video_settings.png') });
+      console.log('All video settings steps completed.');
+
+      // Close settings menu by pressing Escape
+      await page.keyboard.press('Escape');
+      await new Promise(r => setTimeout(r, 1000));
+
     } catch (error) {
-      console.warn('Could not apply video settings:', error.message);
+      console.error('Error applying video settings:', error);
     }
   }
 
@@ -388,12 +495,37 @@ class SoraAutomation {
       console.log('Finalizing page state before submit... ⏳');
       await new Promise(r => setTimeout(r, 500));
 
-      console.log('Pressing Enter twice to submit to Sora...');
-      await page.keyboard.press('Enter');
-      await new Promise(r => setTimeout(r, 500)); // Đợi một nhịp
-      await page.keyboard.press('Enter');
+      const clickedCreate = await page.evaluate(() => {
+        const createSpans = Array.from(document.querySelectorAll('span')).filter(s =>
+          s.textContent && (s.textContent.toLowerCase() === 'create video' || s.textContent.toLowerCase() === 'tạo video')
+        );
+        for (const span of createSpans) {
+          const btn = span.closest('button');
+          if (btn) {
+            btn.click();
+            return true;
+          }
+        }
 
-      await new Promise(r => setTimeout(r, 500));
+        // Fallback to sending Enter if focus is on composer
+        const composer = document.querySelector('textarea, [contenteditable="true"], [role="textbox"]');
+        if (composer) {
+          composer.focus();
+          return false;
+        }
+        return false;
+      });
+
+      if (clickedCreate) {
+        console.log('Clicked "Create video" button.');
+      } else {
+        console.log('Could not find Create button, falling back to pressing Enter...');
+        await page.keyboard.press('Enter');
+        await new Promise(r => setTimeout(r, 500)); // Đợi một nhịp
+        await page.keyboard.press('Enter');
+      }
+
+      await new Promise(r => setTimeout(r, 1000));
     } catch (error) {
       console.warn('Could not submit video generation:', error.message);
     }
