@@ -42,7 +42,7 @@ class SoraAutomation {
   }
 
   async createVideoWithCharacter(imageData, prompt, options = {}) {
-    const { characterId = 'vuluu2k.thao', resolution = '16:9', duration = '5s', videoCount = '1' } = options;
+    const { characterId = 'vuluu2k.thao', resolution = '9:16', duration = '10s', videoCount = '1' } = options;
     let browser = null;
     try {
       browser = await this.initBrowser();
@@ -110,23 +110,47 @@ class SoraAutomation {
       console.log('Submitting video generation...');
       await this.submitVideoGeneration(page);
 
-      // Wait for video to be generated
-      console.log('Waiting for video generation to complete...');
-      const videoUrl = await this.waitForVideoGeneration(page);
+      // Navigate to drafts page to monitor video generation
+      console.log('Navigating to drafts page...');
+      await page.goto('https://sora.chatgpt.com/drafts', { waitUntil: 'networkidle2', timeout: 30000 });
+      await new Promise(r => setTimeout(r, 3000));
 
-      console.log('Video generated successfully:', videoUrl);
+      // Wait for video to be generated on drafts page
+      console.log('Waiting for video generation to complete on drafts page...');
+      const videoResult = await this.waitForVideoOnDrafts(page);
 
-      // Don't close browser - keep it open for user
-      // await browser.close();
-
-      return {
-        success: true,
-        videoUrl,
-        characterId,
-        timestamp: new Date().toISOString(),
-      };
+      if (videoResult.success) {
+        console.log('Video generated successfully!');
+        return {
+          success: true,
+          videoUrl: videoResult.videoUrl || null,
+          characterId,
+          timestamp: new Date().toISOString(),
+        };
+      } else {
+        return {
+          success: false,
+          error: videoResult.error || 'Video generation failed',
+          timestamp: new Date().toISOString(),
+        };
+      }
     } catch (error) {
       console.error('Error in Sora automation:', error);
+
+      // If overload error, close browser and return friendly error
+      if (error.message && error.message.includes('OVERLOAD')) {
+        console.log('Sora is overloaded. Closing browser...');
+        if (browser) {
+          try { await browser.close(); } catch (e) { /* ignore */ }
+        }
+        return {
+          success: false,
+          error: 'Hệ thống tạo video đang quá tải. Vui lòng thử lại sau.',
+          errorCode: 'OVERLOAD',
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       throw error;
     }
   }
@@ -521,12 +545,36 @@ class SoraAutomation {
       } else {
         console.log('Could not find Create button, falling back to pressing Enter...');
         await page.keyboard.press('Enter');
-        await new Promise(r => setTimeout(r, 500)); // Đợi một nhịp
+        await new Promise(r => setTimeout(r, 500));
         await page.keyboard.press('Enter');
       }
 
-      await new Promise(r => setTimeout(r, 1000));
+      // Wait and check for overload error
+      await new Promise(r => setTimeout(r, 3000));
+
+      const overloadError = await page.evaluate(() => {
+        const allText = document.body.innerText.toLowerCase();
+        if (allText.includes('unable to generate') || allText.includes('heavy load') || allText.includes('try again later')) {
+          return true;
+        }
+        // Also check toast/alert elements specifically
+        const alerts = document.querySelectorAll('[role="alert"], [class*="toast"], [class*="error"], [class*="snackbar"]');
+        for (const alert of alerts) {
+          const text = (alert.textContent || '').toLowerCase();
+          if (text.includes('unable') || text.includes('heavy load') || text.includes('try again')) {
+            return true;
+          }
+        }
+        return false;
+      });
+
+      if (overloadError) {
+        throw new Error('OVERLOAD: Hệ thống tạo video đang quá tải. Vui lòng thử lại sau.');
+      }
     } catch (error) {
+      if (error.message.includes('OVERLOAD')) {
+        throw error; // Re-throw overload error to be handled by caller
+      }
       console.warn('Could not submit video generation:', error.message);
     }
   }
@@ -538,9 +586,28 @@ class SoraAutomation {
 
     while (Date.now() - startTime < maxWaitTime) {
       try {
+        // Check for overload / error messages first
+        const errorInfo = await page.evaluate(() => {
+          const allText = document.body.innerText.toLowerCase();
+          if (allText.includes('unable to generate') || allText.includes('heavy load') || allText.includes('try again later')) {
+            return { isOverload: true };
+          }
+          const alerts = document.querySelectorAll('[role="alert"], [class*="toast"], [class*="error"]');
+          for (const alert of alerts) {
+            const text = (alert.textContent || '').toLowerCase();
+            if (text.includes('unable') || text.includes('heavy load') || text.includes('try again')) {
+              return { isOverload: true };
+            }
+          }
+          return { isOverload: false };
+        });
+
+        if (errorInfo.isOverload) {
+          throw new Error('OVERLOAD: Hệ thống tạo video đang quá tải. Vui lòng thử lại sau.');
+        }
+
         // Look for video URL in the page
         const videoUrl = await page.evaluate(() => {
-          // Check for video in various locations
           const videoElement = document.querySelector('video source');
           if (videoElement) {
             return videoElement.src;
@@ -558,7 +625,7 @@ class SoraAutomation {
           return videoUrl;
         }
 
-        // Check for error message
+        // Check for other error messages
         const errorMessage = await page.$('.error-message, [role="alert"]');
         if (errorMessage) {
           const errorText = await page.evaluate(el => el.textContent, errorMessage);
@@ -567,7 +634,7 @@ class SoraAutomation {
 
         await new Promise(r => setTimeout(r, 5000));
       } catch (error) {
-        if (error.message.includes('Video generation failed')) {
+        if (error.message.includes('OVERLOAD') || error.message.includes('Video generation failed')) {
           throw error;
         }
         // Continue waiting
@@ -576,6 +643,117 @@ class SoraAutomation {
     }
 
     throw new Error('Video generation timeout');
+  }
+
+  async waitForVideoOnDrafts(page, timeout = 600000) {
+    const startTime = Date.now();
+    const fs = require('fs-extra');
+    const path = require('path');
+    const tempDir = path.join(__dirname, '../../../temp');
+    await fs.ensureDir(tempDir);
+
+    console.log('Monitoring drafts page for completed video...');
+
+    while (Date.now() - startTime < timeout) {
+      try {
+        // Check for overload errors
+        const hasOverload = await page.evaluate(() => {
+          const text = document.body.innerText.toLowerCase();
+          return text.includes('unable to generate') || text.includes('heavy load');
+        });
+        if (hasOverload) {
+          throw new Error('OVERLOAD: Hệ thống tạo video đang quá tải. Vui lòng thử lại sau.');
+        }
+
+        // Check draft items status
+        const draftStatus = await page.evaluate(() => {
+          // Look for video thumbnails/cards in the drafts page
+          // Completed videos often have a video element or a thumbnail that's clickable
+          const videos = document.querySelectorAll('video');
+          const videoCards = document.querySelectorAll('a[href*="/v/"], a[href*="/video/"]');
+
+          // Check for progress indicators (still generating)
+          const loadingIndicators = document.querySelectorAll('[class*="loading"], [class*="spinner"], [class*="progress"], [role="progressbar"]');
+          const processingText = document.body.innerText.toLowerCase();
+          const isProcessing = processingText.includes('generating') || processingText.includes('processing') || processingText.includes('creating');
+
+          // Count completed video items
+          const allLinks = Array.from(document.querySelectorAll('a'));
+          const draftLinks = allLinks.filter(a => {
+            const href = a.getAttribute('href') || '';
+            return href.includes('/v/') || href.includes('/video/');
+          });
+
+          return {
+            videoCount: videos.length,
+            draftLinksCount: draftLinks.length,
+            draftLinks: draftLinks.map(a => ({ href: a.getAttribute('href'), text: a.textContent.trim().substring(0, 50) })),
+            isProcessing: isProcessing || loadingIndicators.length > 0,
+            loadingCount: loadingIndicators.length,
+          };
+        });
+
+        const elapsed = Math.round((Date.now() - startTime) / 1000);
+        console.log(`[${elapsed}s] Drafts: ${draftStatus.draftLinksCount} links, ${draftStatus.videoCount} videos, processing: ${draftStatus.isProcessing}`);
+
+        // If we have draft links and not processing, the video is ready
+        if (draftStatus.draftLinksCount > 0 && !draftStatus.isProcessing) {
+          console.log('Video completed! Clicking on the first draft...');
+
+          // Click on the first/newest video draft
+          const clicked = await page.evaluate(() => {
+            const allLinks = Array.from(document.querySelectorAll('a'));
+            const draftLinks = allLinks.filter(a => {
+              const href = a.getAttribute('href') || '';
+              return href.includes('/v/') || href.includes('/video/');
+            });
+            if (draftLinks.length > 0) {
+              draftLinks[0].click();
+              return true;
+            }
+            return false;
+          });
+
+          if (clicked) {
+            await new Promise(r => setTimeout(r, 3000));
+            await page.screenshot({ path: path.join(tempDir, 'sora_video_completed.png') });
+
+            const currentUrl = page.url();
+            console.log('Opened video at:', currentUrl);
+
+            return {
+              success: true,
+              videoUrl: currentUrl,
+            };
+          }
+        }
+
+        // If we see videos but still processing, wait longer
+        if (draftStatus.isProcessing) {
+          console.log('Video still generating... waiting...');
+        }
+
+        // Reload drafts page periodically to get fresh state
+        if (elapsed > 0 && elapsed % 30 === 0) {
+          console.log('Refreshing drafts page...');
+          await page.reload({ waitUntil: 'networkidle2', timeout: 15000 });
+          await new Promise(r => setTimeout(r, 2000));
+        }
+
+        await new Promise(r => setTimeout(r, 5000));
+      } catch (error) {
+        if (error.message.includes('OVERLOAD')) {
+          throw error;
+        }
+        console.warn('Error checking drafts:', error.message);
+        await new Promise(r => setTimeout(r, 5000));
+      }
+    }
+
+    return {
+      success: false,
+      error: 'Video generation timeout after 10 minutes.',
+    };
   }
 
   async closeBrowser() {
