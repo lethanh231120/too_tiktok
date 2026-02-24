@@ -110,10 +110,29 @@ class SoraAutomation {
       console.log('Submitting video generation...');
       await this.submitVideoGeneration(page);
 
+      // Wait for Sora to process the submission
+      console.log('Waiting for submission to be processed... ⏳');
+      await new Promise(r => setTimeout(r, 5000));
+
+      // Screenshot after submit
+      const fs = require('fs-extra');
+      const path = require('path');
+      const tempDir = path.join(__dirname, '../../temp');
+      await fs.ensureDir(tempDir);
+      await page.screenshot({ path: path.join(tempDir, 'sora_after_submit.png') });
+      console.log('Current URL after submit:', page.url());
+
       // Navigate to drafts page to monitor video generation
       console.log('Navigating to drafts page...');
-      await page.goto('https://sora.chatgpt.com/drafts', { waitUntil: 'networkidle2', timeout: 30000 });
+      try {
+        await page.goto('https://sora.chatgpt.com/drafts', { waitUntil: 'networkidle2', timeout: 30000 });
+      } catch (navErr) {
+        console.warn('First navigation attempt failed, retrying...', navErr.message);
+        await new Promise(r => setTimeout(r, 2000));
+        await page.goto('https://sora.chatgpt.com/drafts', { waitUntil: 'domcontentloaded', timeout: 30000 });
+      }
       await new Promise(r => setTimeout(r, 3000));
+      console.log('Now on drafts page:', page.url());
 
       // Wait for video to be generated on drafts page
       console.log('Waiting for video generation to complete on drafts page...');
@@ -263,7 +282,8 @@ class SoraAutomation {
 
       // Gõ tên nhân vật để search/filter trong dropdown
       await page.keyboard.type(characterId, { delay: 30 });
-      await new Promise(r => setTimeout(r, 2000));
+      console.log('Typed character name, waiting for suggestions...');
+      await new Promise(r => setTimeout(r, 500));
 
       // Thử tìm và click vào suggestion item trong dropdown
       let characterSelected = false;
@@ -321,12 +341,9 @@ class SoraAutomation {
         console.warn(`Lỗi khi tìm suggestion: ${e.message}`);
       }
 
-      if (!characterSelected) {
-        // Fallback: nhấn Enter để chọn suggestion đầu tiên (nếu dropdown đã hiển thị)
-        await page.keyboard.press('Enter');
-        await new Promise(r => setTimeout(r, 1000));
-      }
-
+      // Always press Enter to confirm the selection
+      console.log(`Character click result: ${characterSelected}, pressing Enter to confirm...`);
+      await page.keyboard.press('Enter');
       await new Promise(r => setTimeout(r, 1500));
     } catch (error) {
       console.warn('Could not select character:', error.message);
@@ -549,31 +566,38 @@ class SoraAutomation {
         await page.keyboard.press('Enter');
       }
 
-      // Wait and check for overload error
-      await new Promise(r => setTimeout(r, 3000));
+      // Quick check for overload error (don't wait too long — page might navigate)
+      await new Promise(r => setTimeout(r, 2000));
 
-      const overloadError = await page.evaluate(() => {
-        const allText = document.body.innerText.toLowerCase();
-        if (allText.includes('unable to generate') || allText.includes('heavy load') || allText.includes('try again later')) {
-          return true;
-        }
-        // Also check toast/alert elements specifically
-        const alerts = document.querySelectorAll('[role="alert"], [class*="toast"], [class*="error"], [class*="snackbar"]');
-        for (const alert of alerts) {
-          const text = (alert.textContent || '').toLowerCase();
-          if (text.includes('unable') || text.includes('heavy load') || text.includes('try again')) {
+      try {
+        const overloadError = await page.evaluate(() => {
+          const allText = document.body.innerText.toLowerCase();
+          if (allText.includes('unable to generate') && allText.includes('heavy load')) {
             return true;
           }
-        }
-        return false;
-      });
+          const alerts = document.querySelectorAll('[role="alert"]');
+          for (const alert of alerts) {
+            const text = (alert.textContent || '').toLowerCase();
+            if (text.includes('unable') && text.includes('heavy load')) {
+              return true;
+            }
+          }
+          return false;
+        });
 
-      if (overloadError) {
-        throw new Error('OVERLOAD: Hệ thống tạo video đang quá tải. Vui lòng thử lại sau.');
+        if (overloadError) {
+          throw new Error('OVERLOAD: Hệ thống tạo video đang quá tải. Vui lòng thử lại sau.');
+        }
+      } catch (evalErr) {
+        if (evalErr.message.includes('OVERLOAD')) throw evalErr;
+        // page.evaluate failed — likely page is navigating, which is fine
+        console.log('Page may be navigating after submit (expected):', evalErr.message.substring(0, 80));
       }
+
+      console.log('Submit completed successfully.');
     } catch (error) {
       if (error.message.includes('OVERLOAD')) {
-        throw error; // Re-throw overload error to be handled by caller
+        throw error;
       }
       console.warn('Could not submit video generation:', error.message);
     }

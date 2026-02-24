@@ -344,6 +344,7 @@ function SoraVideoGenerator({
             className="character-input"
             value={characterId}
             onChange={(e) => setCharacterId(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
             disabled={isLoading}
             placeholder="Hoặc nhập ID nhân vật tùy chỉnh..."
           />

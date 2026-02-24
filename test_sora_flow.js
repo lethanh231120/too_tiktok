@@ -101,43 +101,24 @@ async function testSoraFlow() {
     log('Đã click/submit tạo video!', 'success');
     await page.screenshot({ path: path.join(TEMP_DIR, 'sora_after_submit.png'), fullPage: true });
 
-    // Wait and Monitor
-    log('', 'info');
-    log('══════════════════════════════════════════', 'info');
-    log('Monitoring video generation...', 'success');
-    log('══════════════════════════════════════════', 'info');
+    // Navigate to drafts to monitor
+    log('Navigating to drafts page...', 'step');
+    await page.goto('https://sora.chatgpt.com/drafts', { waitUntil: 'networkidle2', timeout: 30000 });
+    await sleep(3000);
+    log(`Now on: ${page.url()}`, 'success');
+    await page.screenshot({ path: path.join(TEMP_DIR, 'sora_drafts_page.png'), fullPage: true });
 
-    let monitorCount = 0;
-    while (monitorCount < 20) { // Monitor trong ~10 phút
-      await sleep(30000);
-      monitorCount++;
+    // Wait for videos to complete, post them, then get links from profile
+    log('Waiting for video generation to complete on drafts...', 'step');
+    const videoResult = await soraAutomation.waitForVideoOnDrafts(page);
 
-      try {
-        const url = page.url();
-        log(`[Monitor #${monitorCount}] URL: ${url}`, 'info');
-
-        const videoCheck = await page.evaluate(() => {
-          const video = document.querySelector('video');
-          if (video) {
-            const source = video.querySelector('source');
-            return { found: true, src: video.src || (source ? source.src : '') };
-          }
-          return { found: false };
-        });
-
-        if (videoCheck.found) {
-          log(`🎬 VIDEO DETECTED! src: ${videoCheck.src}`, 'success');
-          await page.screenshot({ path: path.join(TEMP_DIR, 'sora_video_found.png'), fullPage: true });
-          break;
-        }
-
-        await page.screenshot({
-          path: path.join(TEMP_DIR, `sora_monitor_${monitorCount}.png`),
-          fullPage: false
-        });
-      } catch (e) {
-        log(`Monitor warning: ${e.message}`, 'warn');
-      }
+    if (videoResult.success) {
+      log('🎬 Video generation completed!', 'success');
+      const urls = Array.isArray(videoResult.videoUrl) ? videoResult.videoUrl : [videoResult.videoUrl];
+      urls.forEach((url, i) => log(`  Video ${i + 1}: ${url}`, 'success'));
+      await page.screenshot({ path: path.join(TEMP_DIR, 'sora_final_result.png'), fullPage: true });
+    } else {
+      log(`Video generation failed: ${videoResult.error}`, 'error');
     }
 
   } catch (error) {
