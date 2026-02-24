@@ -34,20 +34,20 @@ export default function Home() {
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-600/20 blur-[120px]" />
       </div>
 
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 md:px-12 border-b border-white/5 bg-black/20 backdrop-blur-md">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-cyan-500 flex items-center justify-center">
-            <Video className="w-4 h-4 text-white" />
+      <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 py-4 md:px-12 border-b border-white/5 bg-black/60 backdrop-blur-xl">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+          <div className="w-8 h-8 rounded-xl overflow-hidden shadow-lg shadow-black/50 border border-white/10 shrink-0">
+            <img src="/logo.png" alt="TikTok Gen Logo" className="w-full h-full object-cover" />
           </div>
-          <span className="font-bold text-xl tracking-tight">TikTok<span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-cyan-400">Gen</span></span>
+          <span className="font-bold text-xl tracking-tight hidden sm:inline-block">TikTok<span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-cyan-400">Gen</span></span>
         </div>
         <div className="flex items-center gap-6">
-          <button className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Tính năng</button>
-          <button className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Hướng dẫn</button>
+          <button onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Tính năng</button>
+          <button onClick={() => document.getElementById("guide")?.scrollIntoView({ behavior: "smooth" })} className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Hướng dẫn</button>
         </div>
       </nav>
 
-      <main className="relative z-10 flex flex-col items-center px-4 pt-24 pb-32 text-center md:pt-36">
+      <main className="relative z-10 flex flex-col items-center px-4 pt-32 pb-32 text-center md:pt-40">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -118,44 +118,97 @@ export default function Home() {
         </motion.div>
 
         {/* Feature Cards Showcase */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.5 }}
-          className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl px-4"
-        >
-          <Card className="bg-white/5 border-white/10 p-8 backdrop-blur-md rounded-3xl hover:bg-white/[0.08] transition-all duration-300 hover:-translate-y-2 text-left flex flex-col items-start group">
-            <div className="w-14 h-14 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-              <Sparkles className="w-7 h-7" />
-            </div>
-            <h3 className="text-2xl font-bold mb-3 text-white">Tạo video tự động</h3>
-            <p className="text-zinc-400 leading-relaxed text-base">Kết nối trực tiếp với tài khoản Sora của bạn, tự động hóa toàn bộ quy trình cấu hình video, gửi prompt và tải video về máy mà không cần thao tác tay.</p>
-          </Card>
+        <section id="features" className="w-full pt-24 mt-8 flex flex-col items-center">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">Tính năng nổi bật</h2>
+            <p className="text-zinc-400 max-w-xl mx-auto">Trợ lý đắc lực của bạn trong hành trình sáng tạo nội dung tiếp thị liên kết</p>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl px-4"
+          >
+            <Card className="bg-white/5 border-white/10 p-8 backdrop-blur-md rounded-3xl hover:bg-white/[0.08] transition-all duration-300 hover:-translate-y-2 text-left flex flex-col items-start group">
+              <div className="w-14 h-14 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Sparkles className="w-7 h-7" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-white">Tạo video tự động</h3>
+              <p className="text-zinc-400 leading-relaxed text-base">Kết nối trực tiếp với tài khoản Sora của bạn, tự động hóa toàn bộ quy trình cấu hình video, gửi prompt và tải video về máy mà không cần thao tác tay.</p>
+            </Card>
 
-          <Card className="bg-white/5 border-white/10 p-8 backdrop-blur-md rounded-3xl hover:bg-white/[0.08] transition-all duration-300 hover:-translate-y-2 text-left flex flex-col items-start group">
-            <div className="w-14 h-14 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-              <Zap className="w-7 h-7" />
-            </div>
-            <h3 className="text-2xl font-bold mb-3 text-white">Xử lý hàng loạt</h3>
-            <p className="text-zinc-400 leading-relaxed text-base">Đồng bộ link sản phẩm TikTok Affiliate, tự động phân tích thông tin chi tiết và tạo kịch bản video AI chuyên nghiệp với sức mạnh của Google Gemini.</p>
-          </Card>
+            <Card className="bg-white/5 border-white/10 p-8 backdrop-blur-md rounded-3xl hover:bg-white/[0.08] transition-all duration-300 hover:-translate-y-2 text-left flex flex-col items-start group">
+              <div className="w-14 h-14 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Zap className="w-7 h-7" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-white">Xử lý hàng loạt</h3>
+              <p className="text-zinc-400 leading-relaxed text-base">Đồng bộ link sản phẩm TikTok Affiliate, tự động phân tích thông tin chi tiết và tạo kịch bản video AI chuyên nghiệp với sức mạnh của Google Gemini.</p>
+            </Card>
 
-          <Card className="bg-white/5 border-white/10 p-8 backdrop-blur-md rounded-3xl hover:bg-white/[0.08] transition-all duration-300 hover:-translate-y-2 text-left flex flex-col items-start group">
-            <div className="w-14 h-14 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-              <Download className="w-7 h-7" />
-            </div>
-            <h3 className="text-2xl font-bold mb-3 text-white">Quản lý trọn vẹn</h3>
-            <p className="text-zinc-400 leading-relaxed text-base">Lưu trữ khoa học, xem trước nhanh chóng nội dung kịch bản và sắp xếp tất cả các video đã render thành công ngay trên giao diện ứng dụng.</p>
-          </Card>
-        </motion.div>
+            <Card className="bg-white/5 border-white/10 p-8 backdrop-blur-md rounded-3xl hover:bg-white/[0.08] transition-all duration-300 hover:-translate-y-2 text-left flex flex-col items-start group">
+              <div className="w-14 h-14 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Download className="w-7 h-7" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-white">Quản lý trọn vẹn</h3>
+              <p className="text-zinc-400 leading-relaxed text-base">Lưu trữ khoa học, xem trước nhanh chóng nội dung kịch bản và sắp xếp tất cả các video đã render thành công ngay trên giao diện ứng dụng.</p>
+            </Card>
+          </motion.div>
+        </section>
+
+        {/* Guide Section */}
+        <section id="guide" className="w-full pt-32 mt-12 flex flex-col items-center">
+          <div className="text-center mb-16 px-4">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">Hướng dẫn sử dụng</h2>
+            <p className="text-zinc-400 max-w-xl mx-auto text-lg">Chỉ với 3 bước đơn giản để bắt đầu hành trình sáng tạo hàng ngàn video bán hàng</p>
+          </div>
+          
+          <div className="w-full max-w-5xl px-4 grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            <div className="hidden md:block absolute top-[60px] left-[16%] right-[16%] h-0.5 bg-gradient-to-r from-rose-500/0 via-rose-500/50 to-cyan-500/0" />
+            
+            {[
+              { 
+                step: "01", 
+                title: "Đăng nhập hệ thống", 
+                desc: "Mở ứng dụng, tiến hành đăng nhập vào tài khoản OpenAI (Sora) và điền API Key Google Gemini của bạn vào phần cài đặt." 
+              },
+              { 
+                step: "02", 
+                title: "Nhập Link / Sản phẩm", 
+                desc: "Dán đường dẫn sản phẩm TikTok Affiliate vào. Trí tuệ nhân tạo Gemini sẽ phân tích tính năng và viết nhiều kịch bản thu hút." 
+              },
+              { 
+                step: "03", 
+                title: "Tạo & Xuất Video", 
+                desc: "Bấm nút Tạo Video. Phần mềm sẽ tự động gửi lệnh điều khiển cho Sora render những thước phim mượt mà và tải thẳng về máy tính." 
+              }
+            ].map((item, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: i * 0.2 }}
+                className="flex flex-col items-center text-center relative z-10"
+              >
+                <div className="w-32 h-32 rounded-full border-4 border-[#0A0A0A] bg-zinc-900 shadow-[0_0_30px_rgba(255,255,255,0.05)] flex items-center justify-center mb-8 relative">
+                  <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-600">{item.step}</span>
+                </div>
+                <h3 className="text-2xl font-bold mb-4">{item.title}</h3>
+                <p className="text-zinc-400 leading-relaxed px-2">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
       </main>
 
       {/* Decorative dashboard preview behind */}
       <div className="relative max-w-6xl mx-auto px-4 mt-8 pb-32 z-10 w-full" style={{ perspective: "1000px" }}>
         <motion.div
             initial={{ opacity: 0, rotateX: 10, y: 100 }}
-            animate={{ opacity: 1, rotateX: 0, y: 0 }}
-            transition={{ duration: 1, delay: 0.4 }}
+            whileInView={{ opacity: 1, rotateX: 0, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 1, delay: 0.2 }}
             className="w-full rounded-[2rem] border border-white/10 bg-black/60 backdrop-blur-3xl shadow-[0_0_80px_rgba(37,244,238,0.1)] overflow-hidden aspect-[16/9] md:aspect-[21/9] flex flex-col relative"
         >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
@@ -177,7 +230,7 @@ export default function Home() {
                 <div className="w-full h-8 rounded-md bg-white/10 mb-4" />
                 <div className="w-3/4 h-4 rounded text-xs bg-white/5" />
                 <div className="w-5/6 h-4 rounded text-xs bg-white/5" />
-                <div className="w-满 h-4 rounded text-xs bg-white/5" />
+                <div className="w-full h-4 rounded text-xs bg-white/5" />
                 <div className="w-2/3 h-4 rounded text-xs bg-white/5 mt-auto" />
               </div>
               
@@ -201,6 +254,14 @@ export default function Home() {
             
         </motion.div>
       </div>
+
+      <footer className="border-t border-white/10 bg-black/40 py-8 text-center text-zinc-500 text-sm mt-12 pb-12">
+        <div className="flex justify-center items-center gap-2 mb-2">
+          <img src="/logo.png" alt="Logo" className="w-5 h-5 opacity-50 grayscale" />
+          <span className="font-semibold text-zinc-400">TikTokGen</span>
+        </div>
+        <p>© 2026 TikTok Video Generator. Powering Affiliate automation.</p>
+      </footer>
 
     </div>
   );

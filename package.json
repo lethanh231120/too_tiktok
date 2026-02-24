@@ -11,7 +11,8 @@
     "dev": "concurrently \"npm run react-start\" \"wait-on http://localhost:3000 && npm run start\"",
     "react-build": "react-scripts build",
     "build": "npm run react-build && electron-builder -m --x64 --arm64",
-    "build:dir": "npm run react-build && electron-builder --dir"
+    "build:dir": "npm run react-build && electron-builder --dir",
+    "upload": "./scripts/upload-minio.sh"
   },
   "dependencies": {
     "@google/genai": "^1.42.0",
