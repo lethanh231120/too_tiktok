@@ -4,15 +4,27 @@ import { motion } from "framer-motion";
 import { Download, Monitor, Apple, ArrowRight, Video, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useState, useEffect } from "react";
 
 const MINIO_URL = "https://ss3.fastfol.io.vn/tiktok-releases";
 
 export default function Home() {
-  const downloadLinks = {
-    macSilicon: `${MINIO_URL}/TikTok%20Video%20Generator-1.0.0-arm64.dmg`,
-    macIntel: `${MINIO_URL}/TikTok%20Video%20Generator-1.0.0.dmg`,
-    windows: `${MINIO_URL}/TikTok%20Video%20Generator%20Setup%201.0.0.exe`
-  };
+  const [downloadLinks, setDownloadLinks] = useState({
+    macSilicon: "#",
+    macIntel: "#",
+    windows: "#"
+  });
+
+  useEffect(() => {
+    fetch("/downloads.json")
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.macSilicon && data.windows) {
+          setDownloadLinks(data);
+        }
+      })
+      .catch(err => console.error("Failed to load generic downloads.json, ensure the upload script was run:", err));
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white overflow-hidden selection:bg-rose-500/30">
