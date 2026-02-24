@@ -4,35 +4,15 @@ import { motion } from "framer-motion";
 import { Download, Monitor, Apple, ArrowRight, Video, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useState, useEffect } from "react";
+
+const MINIO_URL = "https://ss3.fastfol.io.vn/tiktok-releases";
 
 export default function Home() {
-  const [downloadLinks, setDownloadLinks] = useState({
-    macSilicon: "https://github.com/vuluu2k/tiktok_affiliate_tool/releases/latest",
-    macIntel: "https://github.com/vuluu2k/tiktok_affiliate_tool/releases/latest",
-    windows: "https://github.com/vuluu2k/tiktok_affiliate_tool/releases/latest"
-  });
-
-  useEffect(() => {
-    fetch("https://api.github.com/repos/vuluu2k/tiktok_affiliate_tool/releases/latest")
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.assets) {
-          const links = { ...downloadLinks };
-          data.assets.forEach((asset: any) => {
-            if (asset.name.includes("arm64") && asset.name.endsWith(".dmg")) {
-              links.macSilicon = asset.browser_download_url;
-            } else if (!asset.name.includes("arm64") && asset.name.endsWith(".dmg")) {
-              links.macIntel = asset.browser_download_url;
-            } else if (asset.name.endsWith(".exe")) {
-              links.windows = asset.browser_download_url;
-            }
-          });
-          setDownloadLinks(links);
-        }
-      })
-      .catch(err => console.error("Failed to fetch latest release:", err));
-  }, []);
+  const downloadLinks = {
+    macSilicon: `${MINIO_URL}/TikTok%20Video%20Generator-1.0.0-arm64.dmg`,
+    macIntel: `${MINIO_URL}/TikTok%20Video%20Generator-1.0.0.dmg`,
+    windows: `${MINIO_URL}/TikTok%20Video%20Generator%20Setup%201.0.0.exe`
+  };
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white overflow-hidden selection:bg-rose-500/30">
