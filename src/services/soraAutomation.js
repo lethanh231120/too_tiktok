@@ -134,9 +134,15 @@ class SoraAutomation {
       await new Promise(r => setTimeout(r, 3000));
       console.log('Now on drafts page:', page.url());
 
+      // Count existing drafts to distinguish new ones
+      const existingDraftCount = await page.evaluate(() => {
+        return document.querySelectorAll('[data-index]').length;
+      });
+      console.log(`Existing drafts on page: ${existingDraftCount}`);
+
       // Wait for video to be generated on drafts page
       console.log('Waiting for video generation to complete on drafts page...');
-      const videoResult = await this.waitForVideoOnDrafts(page);
+      const videoResult = await this.waitForVideoOnDrafts(page, 600000, existingDraftCount);
 
       if (videoResult.success) {
         console.log('Video generated successfully!');
@@ -669,86 +675,85 @@ class SoraAutomation {
     throw new Error('Video generation timeout');
   }
 
-  async waitForVideoOnDrafts(page, timeout = 600000) {
+  async waitForVideoOnDrafts(page, timeout = 600000, previousDraftCount = 0) {
     const startTime = Date.now();
     const fs = require('fs-extra');
     const path = require('path');
     const tempDir = path.join(__dirname, '../../../temp');
     await fs.ensureDir(tempDir);
 
-    console.log('Monitoring drafts page for completed videos...');
+    console.log(`Monitoring drafts page... (previous drafts: ${previousDraftCount})`);
 
-    // Phase 1: Wait until all videos are done generating
+    // Phase 1: Wait until new videos finish rendering (using data-index)
     while (Date.now() - startTime < timeout) {
       try {
-        // Check for overload errors
+        // Check for overload
         const hasOverload = await page.evaluate(() => {
           const text = document.body.innerText.toLowerCase();
-          return text.includes('unable to generate') || text.includes('heavy load');
+          return text.includes('unable to generate') && text.includes('heavy load');
         });
         if (hasOverload) {
-          throw new Error('OVERLOAD: Hệ thống tạo video đang quá tải. Vui lòng thử lại sau.');
+          throw new Error('OVERLOAD: Hệ thống tạo video đang quá tải.');
         }
 
-        // Check draft items status
+        // Check each draft item by data-index attribute
         const draftStatus = await page.evaluate(() => {
-          const videos = document.querySelectorAll('video');
+          const draftItems = document.querySelectorAll('[data-index]');
+          const drafts = [];
 
-          // Check for progress indicators (still generating)
-          const loadingIndicators = document.querySelectorAll('[class*="loading"], [class*="spinner"], [class*="progress"], [role="progressbar"]');
-          const processingText = document.body.innerText.toLowerCase();
-          const isProcessing = processingText.includes('generating') || processingText.includes('processing') || processingText.includes('creating');
+          for (const item of draftItems) {
+            const index = item.getAttribute('data-index');
+            const link = item.querySelector('a[href*="/d/gen_"]') || item.querySelector('a[href*="/v/"]');
+            const video = item.querySelector('video');
+            const href = link ? link.getAttribute('href') : null;
 
-          // Count video links
-          const allLinks = Array.from(document.querySelectorAll('a'));
-          const draftLinks = allLinks.filter(a => {
-            const href = a.getAttribute('href') || '';
-            return href.includes('/v/') || href.includes('/video/');
-          });
+            drafts.push({
+              index: parseInt(index),
+              hasLink: !!link,
+              href,
+              hasVideo: !!video,
+              isRendering: !link,
+            });
+          }
 
           return {
-            videoCount: videos.length,
-            draftLinksCount: draftLinks.length,
-            isProcessing: isProcessing || loadingIndicators.length > 0,
-            loadingCount: loadingIndicators.length,
+            totalDrafts: drafts.length,
+            drafts,
+            renderingCount: drafts.filter(d => d.isRendering).length,
+            completedHrefs: drafts.filter(d => d.href).map(d => d.href),
           };
         });
 
         const elapsed = Math.round((Date.now() - startTime) / 1000);
-        console.log(`[${elapsed}s] Drafts: ${draftStatus.draftLinksCount} links, ${draftStatus.videoCount} videos, processing: ${draftStatus.isProcessing}`);
+        const newDraftsTotal = draftStatus.totalDrafts - previousDraftCount;
 
-        // All videos are done when there are links and no processing
-        if (draftStatus.draftLinksCount > 0 && !draftStatus.isProcessing) {
-          console.log('All videos completed on drafts page! Posting them...');
+        console.log(`[${elapsed}s] Total: ${draftStatus.totalDrafts} drafts (${newDraftsTotal} new), Rendering: ${draftStatus.renderingCount}`);
+        if (elapsed < 15 || elapsed % 30 === 0) {
+          console.log('  Drafts:', JSON.stringify(draftStatus.drafts.slice(0, 5)));
+        }
+
+        // Done: new drafts appeared AND none are still rendering
+        if (newDraftsTotal > 0 && draftStatus.renderingCount === 0) {
+          const newHrefs = draftStatus.completedHrefs.slice(0, newDraftsTotal);
+          console.log(`${newDraftsTotal} new videos completed!`, newHrefs);
           await page.screenshot({ path: path.join(tempDir, 'sora_drafts_completed.png') });
 
-          // Click each draft video to post it
-          const draftCount = draftStatus.draftLinksCount;
-          for (let i = 0; i < draftCount; i++) {
+          // Phase 1.5: Click each new draft to post it
+          for (let i = 0; i < newHrefs.length; i++) {
             try {
-              console.log(`Posting video ${i + 1}/${draftCount}...`);
-
-              // Click the first available draft link (after posting, it disappears)
-              const clicked = await page.evaluate(() => {
-                const allLinks = Array.from(document.querySelectorAll('a'));
-                const draftLinks = allLinks.filter(a => {
-                  const href = a.getAttribute('href') || '';
-                  return href.includes('/v/') || href.includes('/video/');
-                });
-                if (draftLinks.length > 0) {
-                  draftLinks[0].click();
-                  return true;
-                }
+              console.log(`Posting video ${i + 1}/${newHrefs.length}...`);
+              const clicked = await page.evaluate((targetHref) => {
+                const link = document.querySelector(`a[href="${targetHref}"]`);
+                if (link) { link.click(); return true; }
                 return false;
-              });
+              }, newHrefs[i]);
 
               if (clicked) {
                 await new Promise(r => setTimeout(r, 3000));
                 await page.screenshot({ path: path.join(tempDir, `sora_post_video_${i + 1}.png`) });
                 console.log(`Video ${i + 1} posted!`);
 
-                // Go back to drafts for the next one
-                if (i < draftCount - 1) {
+                if (i < newHrefs.length - 1) {
                   await page.goto('https://sora.chatgpt.com/drafts', { waitUntil: 'networkidle2', timeout: 15000 });
                   await new Promise(r => setTimeout(r, 2000));
                 }
@@ -757,15 +762,16 @@ class SoraAutomation {
               console.warn(`Error posting video ${i + 1}:`, postErr.message);
             }
           }
-
           break;
         }
 
-        if (draftStatus.isProcessing) {
-          console.log('Videos still generating... waiting...');
+        if (draftStatus.renderingCount > 0) {
+          console.log(`${draftStatus.renderingCount} videos still rendering...`);
+        } else if (newDraftsTotal === 0) {
+          console.log('No new drafts yet, waiting...');
         }
 
-        // Reload drafts page periodically to get fresh state
+        // Reload periodically
         if (elapsed > 0 && elapsed % 30 === 0) {
           console.log('Refreshing drafts page...');
           await page.reload({ waitUntil: 'networkidle2', timeout: 15000 });
@@ -774,20 +780,15 @@ class SoraAutomation {
 
         await new Promise(r => setTimeout(r, 5000));
       } catch (error) {
-        if (error.message.includes('OVERLOAD')) {
-          throw error;
-        }
+        if (error.message.includes('OVERLOAD')) throw error;
         console.warn('Error checking drafts:', error.message);
         await new Promise(r => setTimeout(r, 5000));
       }
     }
 
-    // Check if we timed out
+    // Check timeout
     if (Date.now() - startTime >= timeout) {
-      return {
-        success: false,
-        error: 'Video generation timeout after 10 minutes.',
-      };
+      return { success: false, error: 'Video generation timeout after 10 minutes.' };
     }
 
     // Phase 2: Navigate to profile page to get video links
@@ -795,52 +796,31 @@ class SoraAutomation {
     try {
       await page.goto('https://sora.chatgpt.com/profile', { waitUntil: 'networkidle2', timeout: 30000 });
       await new Promise(r => setTimeout(r, 3000));
-
       await page.screenshot({ path: path.join(tempDir, 'sora_profile_page.png') });
 
-      // Extract video links from anchor tags
       const videoUrls = await page.evaluate(() => {
         const allLinks = Array.from(document.querySelectorAll('a'));
         const videoLinks = allLinks
           .map(a => {
             const href = a.getAttribute('href') || '';
-            // Match video-specific links like /v/xxx or /video/xxx
-            if (href.includes('/v/') || href.includes('/video/')) {
-              // Build full URL if relative
-              if (href.startsWith('/')) {
-                return window.location.origin + href;
-              }
-              return href;
+            if (href.startsWith('/d/gen_') || href.includes('/v/') || href.includes('/video/')) {
+              return href.startsWith('/') ? window.location.origin + href : href;
             }
             return null;
           })
           .filter(Boolean);
-
-        // Remove duplicates
         return [...new Set(videoLinks)];
       });
 
-      console.log(`Found ${videoUrls.length} video links on profile page:`, videoUrls);
+      console.log(`Found ${videoUrls.length} video links on profile:`, videoUrls);
 
-      if (videoUrls.length > 0) {
-        return {
-          success: true,
-          videoUrl: videoUrls, // Return as array
-        };
-      }
-
-      // Fallback: no links found, return current page URL
-      console.warn('No video links found on profile page, returning page URL');
       return {
         success: true,
-        videoUrl: [page.url()],
+        videoUrl: videoUrls.length > 0 ? videoUrls : [page.url()],
       };
     } catch (error) {
       console.error('Error navigating to profile:', error.message);
-      return {
-        success: true,
-        videoUrl: [],
-      };
+      return { success: true, videoUrl: [] };
     }
   }
 

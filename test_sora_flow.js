@@ -108,9 +108,15 @@ async function testSoraFlow() {
     log(`Now on: ${page.url()}`, 'success');
     await page.screenshot({ path: path.join(TEMP_DIR, 'sora_drafts_page.png'), fullPage: true });
 
+    // Count existing drafts
+    const existingDraftCount = await page.evaluate(() => {
+      return document.querySelectorAll('[data-index]').length;
+    });
+    log(`Existing drafts: ${existingDraftCount}`, 'info');
+
     // Wait for videos to complete, post them, then get links from profile
     log('Waiting for video generation to complete on drafts...', 'step');
-    const videoResult = await soraAutomation.waitForVideoOnDrafts(page);
+    const videoResult = await soraAutomation.waitForVideoOnDrafts(page, 600000, existingDraftCount);
 
     if (videoResult.success) {
       log('🎬 Video generation completed!', 'success');
