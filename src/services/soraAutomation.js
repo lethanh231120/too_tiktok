@@ -11,6 +11,12 @@ class SoraAutomation {
   }
 
   async initBrowser() {
+    // If browser exists but is disconnected, clear it
+    if (this.browser && !this.browser.isConnected()) {
+      console.log('Previous browser instance was disconnected. Cleaning up...');
+      this.browser = null;
+    }
+
     if (!this.browser) {
       this.browser = await puppeteer.launch({
         headless: false,
@@ -24,6 +30,12 @@ class SoraAutomation {
         ],
         ignoreDefaultArgs: ['--enable-automation'],
         defaultViewport: null,
+      });
+
+      // Listen for browser close/disconnect events
+      this.browser.on('disconnected', () => {
+        console.log('Browser was closed or disconnected.');
+        this.browser = null;
       });
     }
     return this.browser;
