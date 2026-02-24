@@ -89,6 +89,12 @@ async function testSoraFlow() {
     log('Đã xử lý bước chọn nhân vật', 'success');
     await page.screenshot({ path: path.join(TEMP_DIR, 'sora_after_character_select.png'), fullPage: true });
 
+    // Apply video settings
+    log('Đang cấu hình Video Settings: 9:16, 15s, 3 video...', 'step');
+    await soraAutomation.applyVideoSettings(page, { resolution: '9:16', duration: '15s', videoCount: '3' });
+    log('Đã áp dụng Video Settings', 'success');
+    await page.screenshot({ path: path.join(TEMP_DIR, 'sora_after_video_settings.png'), fullPage: true });
+
     // Submit
     log('Submitting video generation...', 'step');
     await soraAutomation.submitVideoGeneration(page);

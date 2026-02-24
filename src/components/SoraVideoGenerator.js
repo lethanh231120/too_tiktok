@@ -12,6 +12,9 @@ function SoraVideoGenerator({
   onBack,
 }) {
   const [characterId, setCharacterId] = useState('vuluu2k.thao');
+  const [resolution, setResolution] = useState('16:9');
+  const [duration, setDuration] = useState('10s');
+  const [videoCount, setVideoCount] = useState('1');
   const [soraPrompt, setSoraPrompt] = useState('');
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [submissionScreenshot, setSubmissionScreenshot] = useState(null);
@@ -19,6 +22,41 @@ function SoraVideoGenerator({
   const [videoUrl, setVideoUrl] = useState(null);
   const [downloadPath, setDownloadPath] = useState('');
   const [error, setError] = useState('');
+
+  React.useEffect(() => {
+    // Load config on mount
+    const loadConfig = async () => {
+      try {
+        const config = await window.electronAPI.loadConfig();
+        if (config.characterId) setCharacterId(config.characterId);
+        if (config.resolution) setResolution(config.resolution);
+        if (config.duration) setDuration(config.duration);
+        if (config.videoCount) setVideoCount(config.videoCount);
+      } catch (err) {
+        console.error('Error loading config:', err);
+      }
+    };
+    loadConfig();
+  }, []);
+
+  React.useEffect(() => {
+    // Save config when changed
+    const saveConfig = async () => {
+      try {
+        const currentConfig = await window.electronAPI.loadConfig();
+        await window.electronAPI.saveConfig({
+          ...currentConfig,
+          characterId,
+          resolution,
+          duration,
+          videoCount
+        });
+      } catch (err) {
+        console.error('Error saving config:', err);
+      }
+    };
+    saveConfig();
+  }, [characterId, resolution, duration, videoCount]);
 
   const handleGenerateSoraPrompt = async () => {
     setError('');
@@ -59,6 +97,9 @@ function SoraVideoGenerator({
         imageData: tiktokData.imagePath,
         prompt: soraPrompt || caption,
         characterId,
+        resolution,
+        duration,
+        videoCount
       });
 
       if (submitResult.success) {
@@ -193,6 +234,55 @@ function SoraVideoGenerator({
             ))}
           </datalist>
           <p className="hint">Nhập ID nhân vật tùy chỉnh hoặc chọn từ danh sách</p>
+        </div>
+
+        <div className="config-section" style={{ display: 'flex', gap: '1rem' }}>
+          <div style={{ flex: 1 }}>
+            <label>Khung hình</label>
+            <input
+              type="text"
+              list="resolution-options"
+              value={resolution}
+              onChange={(e) => setResolution(e.target.value)}
+              disabled={isLoading}
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+            />
+            <datalist id="resolution-options">
+              <option value="16:9">Ngang (16:9)</option>
+              <option value="9:16">Dọc (9:16)</option>
+            </datalist>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label>Thời lượng</label>
+            <input
+              type="text"
+              list="duration-options"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              disabled={isLoading}
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+            />
+            <datalist id="duration-options">
+              <option value="10s">10 giây</option>
+              <option value="15s">15 giây</option>
+            </datalist>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label>Số lượng</label>
+            <input
+              type="text"
+              list="videocount-options"
+              value={videoCount}
+              onChange={(e) => setVideoCount(e.target.value)}
+              disabled={isLoading}
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)', background: 'rgba(255, 255, 255, 0.05)', color: 'white' }}
+            />
+            <datalist id="videocount-options">
+              <option value="1">1 Video</option>
+              <option value="2">2 Video</option>
+              <option value="3">3 Video</option>
+            </datalist>
+          </div>
         </div>
 
         <div className="config-section">

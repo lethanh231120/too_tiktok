@@ -41,7 +41,8 @@ class SoraAutomation {
     return this.browser;
   }
 
-  async createVideoWithCharacter(imageData, prompt, characterId = 'vuluu2k.thao') {
+  async createVideoWithCharacter(imageData, prompt, options = {}) {
+    const { characterId = 'vuluu2k.thao', resolution = '16:9', duration = '5s', videoCount = '1' } = options;
     let browser = null;
     try {
       browser = await this.initBrowser();
@@ -58,10 +59,28 @@ class SoraAutomation {
       await new Promise(r => setTimeout(r, 3000));
 
       // Check if login is required
-      const isLoggedIn = await this.checkLogin(page);
+      let isLoggedIn = await this.checkLogin(page);
       if (!isLoggedIn) {
-        console.log('Please login manually. Waiting for authentication...');
-        await new Promise(r => setTimeout(r, 30000)); // Wait 30 seconds for user to login
+        console.log('Please login manually. Waiting for authentication... (Timeout: 5 minutes)');
+        let waitCount = 0;
+        const maxWait = 100; // 100 * 3s = 300s (5 minutes)
+
+        while (!isLoggedIn && waitCount < maxWait) {
+          await new Promise(r => setTimeout(r, 3000));
+          isLoggedIn = await this.checkLogin(page);
+          waitCount++;
+
+          if (waitCount % 10 === 0) {
+            console.log(`Still waiting for login... (${Math.floor(waitCount * 3)}s elapsed)`);
+          }
+        }
+
+        if (!isLoggedIn) {
+          throw new Error('Login timeout after 5 minutes.');
+        } else {
+          console.log('Login successful! Proceeding with automation...');
+          await new Promise(r => setTimeout(r, 2000)); // Wait a bit after login completes
+        }
       }
 
       // Upload image if provided
@@ -79,6 +98,10 @@ class SoraAutomation {
       // Select character
       console.log(`Selecting character: ${characterId}`);
       await this.selectCharacter(page, characterId);
+
+      // Apply video settings: resolution, duration, videoCount
+      console.log(`Setting options -> Resolution: ${resolution}, Duration: ${duration}, Count: ${videoCount}`);
+      await this.applyVideoSettings(page, { resolution, duration, videoCount });
 
       console.log('Waiting a bit before submitting... ⏳');
       await new Promise(r => setTimeout(r, 4000));
@@ -110,11 +133,41 @@ class SoraAutomation {
 
   async checkLogin(page) {
     try {
-      // Look for login button or check if authenticated
-      const loginButton = await page.$('[data-testid="login-button"]');
-      return !loginButton;
-    } catch {
-      return true; // Assume logged in if we can't find login button
+      // The most reliable way to check if logged in is to see if we can enter a prompt
+      // or if we are on the main app page with its UI elements
+      const isLoggedIn = await page.evaluate(() => {
+        // Find text area or input field for prompt
+        const textarea = document.querySelector('textarea');
+        const editable = document.querySelector('[contenteditable="true"]');
+        const textbox = document.querySelector('[role="textbox"]');
+
+        // Also check if user profile picture or specific authenticated UI elements are present
+        const avatar = document.querySelector('img[alt*="profile"], [data-testid="profile-button"]');
+
+        // If any of these exist, we are likely logged in and ready
+        if (textarea || editable || textbox || avatar) {
+          return true;
+        }
+
+        // Check for common login indicators
+        const loginBtn = document.querySelector('[data-testid="login-button"], button[id*="login"], a[href*="login"]');
+        const welcomeText = Array.from(document.querySelectorAll('h1, h2')).some(el =>
+          el.textContent.toLowerCase().includes('welcome') ||
+          el.textContent.toLowerCase().includes('chào mừng')
+        );
+
+        if (loginBtn || welcomeText) {
+          return false;
+        }
+
+        // If we can't find anything, be safe and assume not logged in to give user a chance to check
+        return false;
+      });
+
+      return isLoggedIn;
+    } catch (e) {
+      console.warn('Error checking login status:', e.message);
+      return false; // Safest default is to wait if we get an error evaluating
     }
   }
 
@@ -253,6 +306,80 @@ class SoraAutomation {
       await new Promise(r => setTimeout(r, 1500));
     } catch (error) {
       console.warn('Could not select character:', error.message);
+    }
+  }
+
+  async applyVideoSettings(page, { resolution, duration, videoCount }) {
+    try {
+      console.log('Interacting with Sora UI for video settings...');
+
+      await page.evaluate(async (settings) => {
+        const { resolution, duration, videoCount } = settings;
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // Helper block to find elements containing any of the text alternatives
+        const clickOptionByText = async (texts) => {
+          // Broad list of selectors where Sora might place buttons and labels
+          const selectors = [
+            'button',
+            '[role="button"]',
+            '[role="option"]',
+            '[role="menuitem"]',
+            '[role="tab"]',
+            '[role="radio"]',
+            'div[class*="item"]',
+            'div[class*="option"]',
+            'span',
+            'li'
+          ];
+
+          for (const selector of selectors) {
+            const elements = document.querySelectorAll(selector);
+            for (const el of elements) {
+              const elText = el.textContent.trim().toLowerCase();
+              if (!elText) continue;
+
+              // Exact match or contains for special formats
+              const match = texts.some(t => {
+                const searchStr = t.toLowerCase();
+                // To avoid clicking "16" in "16:9" when looking for "1", we can check if it's the exact string
+                // or contains it safely.
+                return elText === searchStr || elText.includes(searchStr);
+              });
+
+              if (match) {
+                // Click and yield to allow UI updates (e.g. dropdown opening/closing)
+                el.click();
+                await wait(800);
+                return true;
+              }
+            }
+          }
+          return false;
+        };
+
+        // 1. Resolution
+        const resTexts = resolution === '16:9' ? ['16:9', 'ngang', 'landscape', 'màn hình ngang'] : ['9:16', 'dọc', 'portrait', 'màn hình dọc'];
+        await clickOptionByText(resTexts);
+
+        // Try again in case the first click only opened a menu
+        await clickOptionByText(resTexts);
+
+        // 2. Duration
+        const durTexts = [duration, `${duration}s`, duration.replace('s', ' giây')];
+        await clickOptionByText(durTexts);
+        await clickOptionByText(durTexts);
+
+        // 3. Count
+        const countTexts = [`${videoCount} variation`, `variations: ${videoCount}`, `số lượng: ${videoCount}`, `x${videoCount}`, `${videoCount} video`];
+        await clickOptionByText(countTexts);
+        await clickOptionByText(countTexts);
+
+      }, { resolution, duration, videoCount });
+
+      await new Promise(r => setTimeout(r, 2000));
+    } catch (error) {
+      console.warn('Could not apply video settings:', error.message);
     }
   }
 
