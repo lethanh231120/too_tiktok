@@ -141,16 +141,10 @@ class SoraAutomation extends EventEmitter {
       await new Promise(r => setTimeout(r, 3000));
       console.log('Now on drafts page:', page.url());
 
-      // Count existing drafts to distinguish new ones
-      const existingDraftCount = await page.evaluate(() => {
-        return document.querySelectorAll('[data-index]').length;
-      });
-      console.log(`Existing drafts on page: ${existingDraftCount}`);
-
       // Wait for video to be generated on drafts page
-      this.emitProgress('⏳ Đang chờ video render...', `Đã có ${existingDraftCount} drafts`);
+      this.emitProgress('⏳ Đang chờ video render...');
       console.log('Waiting for video generation to complete on drafts page...');
-      const videoResult = await this.waitForVideoOnDrafts(page, 600000, existingDraftCount);
+      const videoResult = await this.waitForVideoOnDrafts(page);
 
       if (videoResult.success) {
         console.log('Video generated successfully!');
@@ -681,14 +675,18 @@ class SoraAutomation extends EventEmitter {
     throw new Error('Video generation timeout');
   }
 
-  async waitForVideoOnDrafts(page, timeout = 600000, previousDraftCount = 0) {
+  async waitForVideoOnDrafts(page, timeout = 600000) {
     const startTime = Date.now();
     const tempDir = path.join(__dirname, '../../../temp');
     await fs.ensureDir(tempDir);
 
-    console.log(`Monitoring drafts page... (previous drafts: ${previousDraftCount})`);
+    console.log('Monitoring drafts page for video rendering...');
 
-    // Phase 1: Wait until new videos finish rendering (using data-index)
+    let sawRendering = false;
+    let initialHrefs = new Set();
+    let isFirstCheck = true;
+
+    // Phase 1: Wait until rendering completes
     while (Date.now() - startTime < timeout) {
       try {
         // Check for overload
@@ -729,9 +727,20 @@ class SoraAutomation extends EventEmitter {
         });
 
         const elapsed = Math.round((Date.now() - startTime) / 1000);
-        const newDraftsTotal = draftStatus.totalDrafts - previousDraftCount;
 
-        console.log(`[${elapsed}s] Total: ${draftStatus.totalDrafts} drafts (${newDraftsTotal} new), Rendering: ${draftStatus.renderingCount}`);
+        // On first check, save all existing completed hrefs
+        if (isFirstCheck) {
+          initialHrefs = new Set(draftStatus.completedHrefs);
+          isFirstCheck = false;
+          console.log(`Initial completed drafts: ${initialHrefs.size}, Rendering: ${draftStatus.renderingCount}`);
+        }
+
+        // Track if we've ever seen rendering
+        if (draftStatus.renderingCount > 0) {
+          sawRendering = true;
+        }
+
+        console.log(`[${elapsed}s] Total: ${draftStatus.totalDrafts}, Rendering: ${draftStatus.renderingCount}, sawRendering: ${sawRendering}`);
         if (elapsed < 15 || elapsed % 30 === 0) {
           console.log('  Drafts:', JSON.stringify(draftStatus.drafts.slice(0, 5)));
         }
@@ -740,39 +749,70 @@ class SoraAutomation extends EventEmitter {
         if (draftStatus.renderingCount > 0) {
           const mins = Math.floor(elapsed / 60);
           const secs = elapsed % 60;
-          this.emitProgress(`⏳ Đang render video... (${mins}:${secs.toString().padStart(2, '0')})`, `${draftStatus.renderingCount} video đang xử lý | ${newDraftsTotal} video mới`);
-        } else if (newDraftsTotal === 0) {
+          this.emitProgress(`⏳ Đang render video... (${mins}:${secs.toString().padStart(2, '0')})`, `${draftStatus.renderingCount} video đang xử lý`);
+        } else if (!sawRendering) {
           this.emitProgress('⏳ Đang chờ video xuất hiện...', `Đã chờ ${elapsed}s`);
         }
 
-        // Done: new drafts appeared AND none are still rendering
-        if (newDraftsTotal > 0 && draftStatus.renderingCount === 0) {
-          const newHrefs = draftStatus.completedHrefs.slice(0, newDraftsTotal);
-          console.log(`${newDraftsTotal} new videos completed!`, newHrefs);
-          this.emitProgress(`✅ ${newDraftsTotal} video đã render xong!`, 'Đang chuẩn bị post...');
+        // Done: we saw rendering at some point AND now nothing is rendering
+        if (sawRendering && draftStatus.renderingCount === 0) {
+          // New hrefs = hrefs that weren't in the initial set
+          const newHrefs = draftStatus.completedHrefs.filter(h => !initialHrefs.has(h));
+          console.log(`Rendering complete! ${newHrefs.length} new videos.`, newHrefs);
+
+          // If no new hrefs found, just take the latest ones
+          const hrefsToPost = newHrefs.length > 0 ? newHrefs : draftStatus.completedHrefs.slice(0, 1);
+          this.emitProgress(`✅ ${hrefsToPost.length} video đã render xong!`, 'Đang chuẩn bị post...');
           await page.screenshot({ path: path.join(tempDir, 'sora_drafts_completed.png') });
 
-          // Phase 1.5: Click each new draft to post it
-          for (let i = 0; i < newHrefs.length; i++) {
+          // Phase 1.5: Open each draft in a NEW TAB and click Post
+          const browser = page.browser();
+          for (let i = 0; i < hrefsToPost.length; i++) {
             try {
-              console.log(`Posting video ${i + 1}/${newHrefs.length}...`);
-              this.emitProgress(`📤 Đang post video ${i + 1}/${newHrefs.length}...`);
-              const clicked = await page.evaluate((targetHref) => {
-                const link = document.querySelector(`a[href="${targetHref}"]`);
-                if (link) { link.click(); return true; }
-                return false;
-              }, newHrefs[i]);
+              const draftUrl = `https://sora.chatgpt.com${hrefsToPost[i]}`;
+              console.log(`Opening draft ${i + 1}/${hrefsToPost.length} in new tab: ${draftUrl}`);
+              this.emitProgress(`📤 Đang post video ${i + 1}/${hrefsToPost.length}...`);
 
-              if (clicked) {
-                await new Promise(r => setTimeout(r, 3000));
-                await page.screenshot({ path: path.join(tempDir, `sora_post_video_${i + 1}.png`) });
-                console.log(`Video ${i + 1} posted!`);
+              const newTab = await browser.newPage();
+              await newTab.goto(draftUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+              await new Promise(r => setTimeout(r, 3000));
+              await newTab.screenshot({ path: path.join(tempDir, `sora_draft_detail_${i + 1}.png`) });
 
-                if (i < newHrefs.length - 1) {
-                  await page.goto('https://sora.chatgpt.com/drafts', { waitUntil: 'networkidle2', timeout: 15000 });
-                  await new Promise(r => setTimeout(r, 2000));
+              // Find and click the Post button
+              const posted = await newTab.evaluate(() => {
+                const buttons = Array.from(document.querySelectorAll('button'));
+                for (const btn of buttons) {
+                  const text = (btn.textContent || '').trim().toLowerCase();
+                  if (text === 'post' || text === 'đăng' || text === 'publish' || text === 'share') {
+                    btn.click();
+                    return text;
+                  }
                 }
+                const spans = Array.from(document.querySelectorAll('button span'));
+                for (const span of spans) {
+                  const text = (span.textContent || '').trim().toLowerCase();
+                  if (text === 'post' || text === 'đăng' || text === 'publish' || text === 'share') {
+                    span.closest('button').click();
+                    return text;
+                  }
+                }
+                return null;
+              });
+
+              if (posted) {
+                console.log(`Clicked "${posted}" button for video ${i + 1}!`);
+                await new Promise(r => setTimeout(r, 3000));
+                await newTab.screenshot({ path: path.join(tempDir, `sora_posted_${i + 1}.png`) });
+                this.emitProgress(`✅ Video ${i + 1} đã post!`);
+              } else {
+                console.warn(`Could not find Post button for video ${i + 1}`);
+                const allButtons = await newTab.evaluate(() =>
+                  Array.from(document.querySelectorAll('button')).map(b => b.textContent.trim()).filter(Boolean).slice(0, 10)
+                );
+                console.log('Available buttons:', allButtons);
               }
+
+              await newTab.close();
             } catch (postErr) {
               console.warn(`Error posting video ${i + 1}:`, postErr.message);
             }
