@@ -265,7 +265,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8 bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md text-left transition-all hover:bg-white/[0.08]">
             <div className="flex-shrink-0">
               <div className="w-40 h-40 md:w-48 md:h-48 rounded-2xl overflow-hidden border-2 border-white/10 shadow-xl shadow-black/50">
-                <img src="/avatar.jpg" alt="Vũ Lưu" className="w-full h-full object-cover" />
+                <img src="/avatar_info.jpg" alt="Vũ Lưu" className="w-full h-full object-cover" />
               </div>
             </div>
             <div className="flex flex-col flex-grow justify-center py-2 h-full">
