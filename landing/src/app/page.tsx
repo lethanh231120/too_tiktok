@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Download, Monitor, Apple, ArrowRight, Video, Sparkles, Zap, MessageCircle, Phone, Mail, Github, Facebook } from "lucide-react";
+import { Download, Monitor, Apple, ArrowRight, Video, Sparkles, Zap, MessageCircle, Phone, Mail, Github, Facebook, ShieldAlert, Terminal, Copy, Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
@@ -14,6 +14,14 @@ export default function Home() {
     macIntel: "#",
     windows: "#"
   });
+  const [copiedCommand, setCopiedCommand] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCommand(true);
+    setTimeout(() => setCopiedCommand(false), 2000);
+  };
 
   useEffect(() => {
     fetch("/downloads.json")
@@ -44,6 +52,7 @@ export default function Home() {
         <div className="flex items-center gap-6">
           <button onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })} className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Tính năng</button>
           <button onClick={() => document.getElementById("guide")?.scrollIntoView({ behavior: "smooth" })} className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Hướng dẫn</button>
+          <button onClick={() => document.getElementById("troubleshoot")?.scrollIntoView({ behavior: "smooth" })} className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Khắc phục</button>
           <button onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })} className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Liên hệ</button>
         </div>
       </nav>
@@ -199,6 +208,199 @@ export default function Home() {
                 <p className="text-zinc-400 leading-relaxed px-2">{item.desc}</p>
               </motion.div>
             ))}
+          </div>
+        </section>
+
+        {/* macOS Troubleshooting Section */}
+        <section id="troubleshoot" className="w-full pt-32 mt-12 flex flex-col items-center">
+          <div className="text-center mb-16 px-4">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 mb-6">
+              <ShieldAlert className="w-4 h-4" />
+              <span>Dành cho người dùng macOS</span>
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">Khắc phục lỗi cài đặt</h2>
+            <p className="text-zinc-400 max-w-2xl mx-auto text-lg">
+              Nếu bạn gặp thông báo <span className="text-amber-400 font-semibold">&ldquo;is damaged and can&apos;t be opened&rdquo;</span> khi mở ứng dụng, hãy làm theo hướng dẫn bên dưới
+            </p>
+          </div>
+
+          <div className="w-full max-w-3xl px-4 flex flex-col gap-4">
+            {/* Method 1 - Terminal Command */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5 }}
+            >
+              <button
+                onClick={() => setOpenFaq(openFaq === 0 ? null : 0)}
+                className="w-full text-left"
+              >
+                <Card className="bg-white/5 border-white/10 p-6 backdrop-blur-md rounded-2xl hover:bg-white/[0.08] transition-all duration-300 cursor-pointer">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                        <Terminal className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-bold text-white">Cách 1: Chạy lệnh Terminal</h3>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold">Khuyến nghị</span>
+                        </div>
+                        <p className="text-zinc-400 text-sm mt-1">Xóa thuộc tính cách ly (quarantine) của macOS</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform duration-300 ${openFaq === 0 ? "rotate-180" : ""}`} />
+                  </div>
+                </Card>
+              </button>
+              {openFaq === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-2 bg-white/[0.03] border border-white/10 rounded-2xl p-6"
+                >
+                  <p className="text-zinc-300 text-sm mb-4">Mở ứng dụng <strong className="text-white">Terminal</strong> (tìm trong Spotlight bằng cách nhấn <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-xs font-mono">⌘ + Space</kbd> rồi gõ &ldquo;Terminal&rdquo;), sau đó dán lệnh sau:</p>
+                  <div className="relative group">
+                    <div className="bg-black/60 border border-white/10 rounded-xl p-4 font-mono text-sm text-emerald-400 overflow-x-auto">
+                      <span className="text-zinc-500 select-none">$ </span>xattr -cr "/Applications/TikTok Video Generator.app"
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleCopy('xattr -cr "/Applications/TikTok Video Generator.app"'); }}
+                      className="absolute top-3 right-3 p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
+                      title="Sao chép lệnh"
+                    >
+                      {copiedCommand ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
+                    </button>
+                  </div>
+                  <p className="text-zinc-500 text-xs mt-3">💡 Nếu app nằm ở thư mục <strong>Downloads</strong>, thay đường dẫn thành: <code className="text-zinc-400">~/Downloads/TikTok\ Video\ Generator.app</code></p>
+                </motion.div>
+              )}
+            </motion.div>
+
+            {/* Method 2 - System Settings */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <button
+                onClick={() => setOpenFaq(openFaq === 1 ? null : 1)}
+                className="w-full text-left"
+              >
+                <Card className="bg-white/5 border-white/10 p-6 backdrop-blur-md rounded-2xl hover:bg-white/[0.08] transition-all duration-300 cursor-pointer">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                        <ShieldAlert className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white">Cách 2: Mở từ System Settings</h3>
+                        <p className="text-zinc-400 text-sm mt-1">Cho phép ứng dụng qua cài đặt bảo mật</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform duration-300 ${openFaq === 1 ? "rotate-180" : ""}`} />
+                  </div>
+                </Card>
+              </button>
+              {openFaq === 1 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-2 bg-white/[0.03] border border-white/10 rounded-2xl p-6"
+                >
+                  <ol className="space-y-3 text-sm text-zinc-300 list-decimal list-inside">
+                    <li>Mở <strong className="text-white">System Settings</strong> (Cài đặt hệ thống)</li>
+                    <li>Chọn <strong className="text-white">Privacy & Security</strong> (Quyền riêng tư & Bảo mật)</li>
+                    <li>Cuộn xuống phần <strong className="text-white">Security</strong></li>
+                    <li>Tìm thông báo về ứng dụng bị chặn → Nhấn <strong className="text-white">&ldquo;Open Anyway&rdquo;</strong></li>
+                    <li>Xác nhận mở ứng dụng trong hộp thoại xuất hiện</li>
+                  </ol>
+                </motion.div>
+              )}
+            </motion.div>
+
+            {/* Method 3 - Disable Gatekeeper */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <button
+                onClick={() => setOpenFaq(openFaq === 2 ? null : 2)}
+                className="w-full text-left"
+              >
+                <Card className="bg-white/5 border-white/10 p-6 backdrop-blur-md rounded-2xl hover:bg-white/[0.08] transition-all duration-300 cursor-pointer">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                        <ShieldAlert className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-white">Cách 3: Tắt Gatekeeper tạm thời</h3>
+                        <p className="text-zinc-400 text-sm mt-1">Tắt tính năng kiểm tra bảo mật của macOS</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-5 h-5 text-zinc-400 transition-transform duration-300 ${openFaq === 2 ? "rotate-180" : ""}`} />
+                  </div>
+                </Card>
+              </button>
+              {openFaq === 2 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-2 bg-white/[0.03] border border-white/10 rounded-2xl p-6"
+                >
+                  <p className="text-zinc-300 text-sm mb-4">Chạy lệnh sau trong Terminal để tắt Gatekeeper:</p>
+                  <div className="relative group mb-3">
+                    <div className="bg-black/60 border border-white/10 rounded-xl p-4 font-mono text-sm text-amber-400 overflow-x-auto">
+                      <span className="text-zinc-500 select-none">$ </span>sudo spctl --master-disable
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleCopy('sudo spctl --master-disable'); }}
+                      className="absolute top-3 right-3 p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
+                      title="Sao chép lệnh"
+                    >
+                      {copiedCommand ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
+                    </button>
+                  </div>
+                  <p className="text-zinc-300 text-sm mb-3">Sau khi mở app thành công, <strong className="text-white">bật lại</strong> Gatekeeper:</p>
+                  <div className="relative group">
+                    <div className="bg-black/60 border border-white/10 rounded-xl p-4 font-mono text-sm text-emerald-400 overflow-x-auto">
+                      <span className="text-zinc-500 select-none">$ </span>sudo spctl --master-enable
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleCopy('sudo spctl --master-enable'); }}
+                      className="absolute top-3 right-3 p-2 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
+                      title="Sao chép lệnh"
+                    >
+                      {copiedCommand ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
+                    </button>
+                  </div>
+                  <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                    <p className="text-amber-400 text-xs">⚠️ Lưu ý: Nhớ bật lại Gatekeeper sau khi mở app để đảm bảo an toàn cho máy tính của bạn.</p>
+                  </div>
+                </motion.div>
+              )}
+            </motion.div>
+
+            {/* Why this happens */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mt-4 p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center"
+            >
+              <p className="text-zinc-500 text-sm leading-relaxed">
+                💬 <strong className="text-zinc-400">Tại sao lỗi này xảy ra?</strong> macOS có tính năng bảo mật <em>Gatekeeper</em> tự động chặn các ứng dụng chưa được Apple công chứng (notarize). Ứng dụng TikTokGen hoàn toàn an toàn — lỗi này chỉ do app chưa được đăng ký với Apple Developer Program.
+              </p>
+            </motion.div>
           </div>
         </section>
       </main>
