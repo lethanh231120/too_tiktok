@@ -3,6 +3,8 @@ const path = require('path');
 const Store = require('electron-store');
 require('dotenv').config();
 
+let autoUpdater = null;
+
 // Polyfill: Electron main process doesn't have browser's File API,
 // but axios v1.6+ references it. Provide a stub to prevent ReferenceError.
 if (typeof globalThis.File === 'undefined') {
@@ -52,7 +54,46 @@ function createWindow() {
   }
 }
 
-app.on('ready', createWindow);
+// ── Auto-updater setup ──
+function setupAutoUpdater() {
+  try {
+    autoUpdater = require('electron-updater').autoUpdater;
+  } catch (e) {
+    console.warn('[updater] electron-updater not available:', e.message);
+    return;
+  }
+
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('[updater] Update available:', info.version);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-available', info);
+    }
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('[updater] Update downloaded:', info.version);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update-downloaded', info);
+    }
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('[updater] Error:', err.message);
+  });
+
+  // Only check for updates in production
+  if (app.isPackaged) {
+    autoUpdater.checkForUpdatesAndNotify();
+  }
+}
+
+app.on('ready', () => {
+  createWindow();
+  setupAutoUpdater();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -212,4 +253,23 @@ ipcMain.handle('delete-history', (event, id) => {
 ipcMain.handle('clear-history', () => {
   store.set('videoHistory', []);
   return { success: true };
+});
+
+// ── Auto-update IPC Handlers ──
+ipcMain.handle('install-update', () => {
+  if (autoUpdater) {
+    autoUpdater.quitAndInstall();
+  }
+});
+
+ipcMain.handle('check-for-updates', async () => {
+  if (!autoUpdater) {
+    return { success: false, error: 'Auto-updater not available in dev mode' };
+  }
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return { success: true, version: result?.updateInfo?.version };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 });

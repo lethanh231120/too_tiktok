@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../styles/Dashboard.css';
 import TikTokForm from './TikTokForm';
 import CaptionGenerator from './CaptionGenerator';
@@ -6,7 +6,7 @@ import SoraVideoGenerator from './SoraVideoGenerator';
 import ProgressTracker from './ProgressTracker';
 import SettingsModal from './SettingsModal';
 import VideoHistory from './VideoHistory';
-import { Settings } from 'lucide-react';
+import { Settings, Download, CloudDownload } from 'lucide-react';
 
 function Dashboard() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -15,6 +15,43 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState(null);
+  const [updateReady, setUpdateReady] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+
+  useEffect(() => {
+    if (!window.electronAPI) return;
+
+    const cleanupAvailable = window.electronAPI.onUpdateAvailable((info) => {
+      setUpdateInfo(info);
+    });
+
+    const cleanupDownloaded = window.electronAPI.onUpdateDownloaded((info) => {
+      setUpdateInfo(info);
+      setUpdateReady(true);
+    });
+
+    return () => {
+      if (cleanupAvailable) cleanupAvailable();
+      if (cleanupDownloaded) cleanupDownloaded();
+    };
+  }, []);
+
+  const handleInstallUpdate = () => {
+    if (window.electronAPI) {
+      window.electronAPI.installUpdate();
+    }
+  };
+
+  const handleCheckForUpdates = async () => {
+    if (!window.electronAPI) return;
+    setCheckingUpdate(true);
+    try {
+      await window.electronAPI.checkForUpdates();
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
 
   const handleTiktokDataExtracted = (data) => {
     setTiktokData(data);
@@ -75,28 +112,69 @@ function Dashboard() {
           <p>Tự động tạo nội dung bằng Gemini API & Sora</p>
         </div>
 
-        <button
-          className="settings-toggle-btn"
-          onClick={() => setIsSettingsOpen(true)}
-          title="Settings"
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '50%',
-            width: '42px',
-            height: '42px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.2rem',
-            transition: 'all 0.2s ease',
-            marginLeft: 'auto'
-          }}
-        >
-          <Settings size={20} color="white" />
-        </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            className="settings-toggle-btn"
+            onClick={handleCheckForUpdates}
+            disabled={checkingUpdate}
+            title="Check for updates"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '50%',
+              width: '42px',
+              height: '42px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <CloudDownload size={18} color="white" className={checkingUpdate ? 'spin' : ''} />
+          </button>
+          <button
+            className="settings-toggle-btn"
+            onClick={() => setIsSettingsOpen(true)}
+            title="Settings"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '50%',
+              width: '42px',
+              height: '42px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <Settings size={20} color="white" />
+          </button>
+        </div>
       </header>
+
+      {updateInfo && (
+        <div className="update-banner">
+          <div className="update-banner-content">
+            <Download size={18} />
+            <span>
+              {updateReady
+                ? `Version ${updateInfo.version} is ready to install!`
+                : `Version ${updateInfo.version} is downloading...`}
+            </span>
+          </div>
+          {updateReady && (
+            <button className="update-install-btn" onClick={handleInstallUpdate}>
+              Restart & Update
+            </button>
+          )}
+          <button className="update-dismiss-btn" onClick={() => setUpdateInfo(null)}>
+            &times;
+          </button>
+        </div>
+      )}
 
       <div className="dashboard-container">
         <div className="main-content">

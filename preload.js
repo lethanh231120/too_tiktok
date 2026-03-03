@@ -23,4 +23,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('sora-progress', handler);
     return () => ipcRenderer.removeListener('sora-progress', handler);
   },
+  // Auto-update APIs
+  onUpdateAvailable: (callback) => {
+    const handler = (event, info) => callback(info);
+    ipcRenderer.on('update-available', handler);
+    return () => ipcRenderer.removeListener('update-available', handler);
+  },
+  onUpdateDownloaded: (callback) => {
+    const handler = (event, info) => callback(info);
+    ipcRenderer.on('update-downloaded', handler);
+    return () => ipcRenderer.removeListener('update-downloaded', handler);
+  },
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
 });
