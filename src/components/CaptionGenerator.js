@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Sparkles, Edit3, Check, RefreshCw } from 'lucide-react';
-import '../styles/CaptionGenerator.css';
+import React, { useState } from "react";
+import { ArrowLeft, Sparkles, Edit3, Check, RefreshCw } from "lucide-react";
+import "../styles/CaptionGenerator.css";
 
 function CaptionGenerator({
   tiktokData,
@@ -10,15 +10,16 @@ function CaptionGenerator({
   addProgress,
   onBack,
 }) {
-  const [caption, setCaption] = useState('');
-  const [editedCaption, setEditedCaption] = useState('');
+  const [caption, setCaption] = useState("");
+  const [editedCaption, setEditedCaption] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
+  console.log({ tiktokData });
   const handleGenerateCaption = async () => {
-    setError('');
+    setError("");
     setIsLoading(true);
-    addProgress('🎯 Đang tạo caption bằng Gemini...');
+    addProgress("🎯 Đang tạo caption bằng Gemini...");
 
     try {
       const content = `Title: ${tiktokData.title}\nDescription: ${tiktokData.description}`;
@@ -28,9 +29,9 @@ function CaptionGenerator({
       if (result.success) {
         setCaption(result.caption);
         setEditedCaption(result.caption);
-        addProgress('✓ Đã tạo caption');
+        addProgress("✓ Đã tạo caption");
       } else {
-        setError(result.error || 'Tạo caption thất bại');
+        setError(result.error || "Tạo caption thất bại");
         addProgress(`✗ Lỗi: ${result.error}`);
       }
     } catch (err) {
@@ -65,19 +66,19 @@ function CaptionGenerator({
             <strong>Mô tả:</strong>
             <p>{tiktokData.description}</p>
           </div>
-          {(tiktokData.images && tiktokData.images.length > 0) && (
+          {tiktokData.images && tiktokData.images.length > 0 && (
             <div className="content-item">
               <strong>Hình ảnh:</strong>
-              <div style={{ margin: '0.75rem 0' }}>
+              <div style={{ margin: "0.75rem 0" }}>
                 <img
                   src={tiktokData.images[0]}
                   alt="Extracted preview"
                   style={{
-                    maxWidth: '100%',
-                    maxHeight: '200px',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                    maxWidth: "100%",
+                    maxHeight: "200px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
                   }}
                 />
               </div>
@@ -94,7 +95,7 @@ function CaptionGenerator({
             disabled={isLoading}
             className="generate-btn"
           >
-            {isLoading ? '⏳ Đang tạo...' : '✨ Tạo Caption'}
+            {isLoading ? "⏳ Đang tạo..." : "✨ Tạo Caption"}
           </button>
         ) : (
           <>
@@ -127,10 +128,7 @@ function CaptionGenerator({
               )}
             </div>
 
-            <button
-              onClick={handleUseCaption}
-              className="use-caption-btn"
-            >
+            <button onClick={handleUseCaption} className="use-caption-btn">
               <Check size={18} /> Sử dụng Caption này & Tiếp tục
             </button>
 

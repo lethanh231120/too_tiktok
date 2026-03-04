@@ -181,7 +181,6 @@ ipcMain.handle('poll-sora-result', async (event) => {
 
 ipcMain.handle('download-video', async (event, { url, filename }) => {
   try {
-    const fetch = require('node-fetch');
     const fs = require('fs-extra');
     const os = require('os');
     const path = require('path');
@@ -190,9 +189,25 @@ ipcMain.handle('download-video', async (event, { url, filename }) => {
     await fs.ensureDir(downloadDir);
 
     const filePath = path.join(downloadDir, filename || `video_${Date.now()}.mp4`);
+    const actualUrl = Array.isArray(url) ? url[0] : url;
 
-    console.log(`Downloading video from ${url} to ${filePath}...`);
-    const response = await fetch(url);
+    if (!actualUrl) {
+      return { success: false, error: 'No video URL provided' };
+    }
+
+    // Sora page link (trang chứa video) - cần dùng Puppeteer để lấy video thật
+    const isSoraPage = /sora\.chatgpt\.com\/(d\/|v\/|profile)/.test(actualUrl);
+
+    if (isSoraPage) {
+      const soraAutomation = require('./src/services/soraAutomation');
+      const result = await soraAutomation.downloadVideoFromPage(actualUrl, filePath);
+      return result;
+    }
+
+    // Link .mp4 trực tiếp - dùng fetch
+    const fetch = require('node-fetch');
+    console.log(`Downloading video from ${actualUrl} to ${filePath}...`);
+    const response = await fetch(actualUrl);
     if (!response.ok) throw new Error(`Failed to download: ${response.statusText}`);
 
     const buffer = await response.buffer();

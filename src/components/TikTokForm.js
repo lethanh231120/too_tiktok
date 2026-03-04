@@ -1,28 +1,29 @@
-import React, { useState } from 'react';
-import { CheckCircle2, Link2 } from 'lucide-react';
-import '../styles/TikTokForm.css';
+import React, { useState } from "react";
+import { CheckCircle2, Link2 } from "lucide-react";
+import "../styles/TikTokForm.css";
 
 function TikTokForm({ onDataExtracted, setIsLoading, isLoading, addProgress }) {
-  const [url, setUrl] = useState('');
-  const [error, setError] = useState('');
+  const [url, setUrl] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
-    addProgress('🔄 Đang trích xuất dữ liệu TikTok...');
+    addProgress("🔄 Đang trích xuất dữ liệu TikTok...");
 
     try {
       if (!window.electronAPI) {
-        throw new Error('Electron API not available');
+        throw new Error("Electron API not available");
       }
 
       const result = await window.electronAPI.extractTiktokData(url);
 
+      console.log({ url, result });
       if (result.success) {
         onDataExtracted(result.data);
       } else {
-        setError(result.error || 'Trích xuất dữ liệu thất bại');
+        setError(result.error || "Trích xuất dữ liệu thất bại");
         addProgress(`✗ Lỗi: ${result.error}`);
       }
     } catch (err) {
@@ -60,7 +61,13 @@ function TikTokForm({ onDataExtracted, setIsLoading, isLoading, addProgress }) {
             disabled={isLoading || !url}
             className="submit-btn"
           >
-            {isLoading ? '⏳ Đang trích xuất...' : <><Link2 size={18} /> Trích xuất dữ liệu</>}
+            {isLoading ? (
+              "⏳ Đang trích xuất..."
+            ) : (
+              <>
+                <Link2 size={18} /> Trích xuất dữ liệu
+              </>
+            )}
           </button>
         </form>
 
@@ -73,9 +80,18 @@ function TikTokForm({ onDataExtracted, setIsLoading, isLoading, addProgress }) {
       <div className="info-section">
         <h3>Tính năng:</h3>
         <ul>
-          <li><CheckCircle2 size={16} color="#25f4ee" className="list-icon" /> Trích xuất tiêu đề và mô tả video</li>
-          <li><CheckCircle2 size={16} color="#25f4ee" className="list-icon" /> Tải ảnh bìa/thumbnail</li>
-          <li><CheckCircle2 size={16} color="#25f4ee" className="list-icon" /> Phân tích cấu trúc nội dung</li>
+          <li>
+            <CheckCircle2 size={16} color="#25f4ee" className="list-icon" />{" "}
+            Trích xuất tiêu đề và mô tả video
+          </li>
+          <li>
+            <CheckCircle2 size={16} color="#25f4ee" className="list-icon" /> Tải
+            ảnh bìa/thumbnail
+          </li>
+          <li>
+            <CheckCircle2 size={16} color="#25f4ee" className="list-icon" />{" "}
+            Phân tích cấu trúc nội dung
+          </li>
         </ul>
       </div>
     </div>

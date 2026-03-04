@@ -4,12 +4,40 @@ const path = require('path');
 const os = require('os');
 const EventEmitter = require('events');
 
+/** Get Chrome/Chromium executable path for current platform. Returns undefined to use Puppeteer's bundled Chromium if not found. */
+function getChromeExecutablePath() {
+  const platform = process.platform;
+  const paths = {
+    darwin: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    win32: [
+      path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)', 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(process.env.LOCALAPPDATA || '', 'Google\\Chrome\\Application\\chrome.exe'),
+    ],
+    linux: ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser'],
+  };
+  if (platform === 'darwin' && fs.existsSync(paths.darwin)) return paths.darwin;
+  if (platform === 'win32') {
+    for (const p of paths.win32) {
+      if (p && fs.existsSync(p)) return p;
+    }
+  }
+  if (platform === 'linux') {
+    for (const p of paths.linux) {
+      if (fs.existsSync(p)) return p;
+    }
+  }
+  return undefined; // Use Puppeteer's bundled Chromium
+}
+
 class SoraAutomation extends EventEmitter {
   constructor() {
     super();
     this.browser = null;
     this.soraUrl = 'https://sora.chatgpt.com';
     this.maxRetries = 3;
+    // cache the most recent video result so that renderer can poll after submission
+    this.lastVideoResult = null;
   }
 
   emitProgress(status, detail = '') {
@@ -24,9 +52,9 @@ class SoraAutomation extends EventEmitter {
     }
 
     if (!this.browser) {
-      this.browser = await puppeteer.launch({
+      const chromePath = getChromeExecutablePath();
+      const launchOpts = {
         headless: false,
-        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
         userDataDir: path.join(os.tmpdir(), 'tiktok-sora-chrome-user-data'),
         args: [
           '--no-sandbox',
@@ -36,7 +64,10 @@ class SoraAutomation extends EventEmitter {
         ],
         ignoreDefaultArgs: ['--enable-automation'],
         defaultViewport: null,
-      });
+      };
+      if (chromePath) launchOpts.executablePath = chromePath;
+
+      this.browser = await puppeteer.launch(launchOpts);
 
       // Listen for browser close/disconnect events
       this.browser.on('disconnected', () => {
@@ -148,18 +179,23 @@ class SoraAutomation extends EventEmitter {
 
       if (videoResult.success) {
         console.log('Video generated successfully!');
-        return {
+        const res = {
           success: true,
           videoUrl: videoResult.videoUrl || null,
           characterId,
           timestamp: new Date().toISOString(),
         };
+        // cache result for later polling
+        this.lastVideoResult = res;
+        return res;
       } else {
-        return {
+        const res = {
           success: false,
           error: videoResult.error || 'Video generation failed',
           timestamp: new Date().toISOString(),
         };
+        this.lastVideoResult = res;
+        return res;
       }
     } catch (error) {
       console.error('Error in Sora automation:', error);
@@ -877,6 +913,14 @@ class SoraAutomation extends EventEmitter {
       console.error('Error navigating to profile:', error.message);
       return { success: true, videoUrl: [] };
     }
+  }
+
+  async pollForVideoResult() {
+    // simply return the cached result from the last submission
+    if (this.lastVideoResult) {
+      return this.lastVideoResult;
+    }
+    return { success: false, error: 'No video result available' };
   }
 
   async closeBrowser() {

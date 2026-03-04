@@ -117,6 +117,14 @@ async function testSoraFlow() {
       const urls = Array.isArray(videoResult.videoUrl) ? videoResult.videoUrl : [videoResult.videoUrl];
       urls.forEach((url, i) => log(`  Video ${i + 1}: ${url}`, 'success'));
       await page.screenshot({ path: path.join(TEMP_DIR, 'sora_final_result.png'), fullPage: true });
+
+      // verify pollForVideoResult returns same cached result
+      const polled = await soraAutomation.pollForVideoResult();
+      if (polled.success) {
+        log('Poll result obtained (cached).', 'success');
+      } else {
+        log('Poll result missing or failed: ' + polled.error, 'warn');
+      }
     } else {
       log(`Video generation failed: ${videoResult.error}`, 'error');
     }
