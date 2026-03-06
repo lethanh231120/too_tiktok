@@ -1,4 +1,4 @@
-# 🔧 Troubleshooting Guide
+y# 🔧 Troubleshooting Guide
 
 ## Common Issues & Solutions
 

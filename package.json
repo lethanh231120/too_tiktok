@@ -10,7 +10,7 @@
     "react-start": "cross-env BROWSER=none react-scripts start",
     "dev": "concurrently \"npm run react-start\" \"wait-on http://localhost:3000 && npm run start\"",
     "react-build": "react-scripts build",
-    "build": "npm run react-build && electron-builder -m --x64 --arm64",
+    "build": "npm run react-build && electron-builder --win --x64",
     "build:dir": "npm run react-build && electron-builder --dir",
     "upload": "./scripts/upload-minio.sh"
   },
@@ -25,7 +25,10 @@
     "fs-extra": "^11.0.0",
     "lucide-react": "^0.575.0",
     "node-fetch": "^2.7.0",
-    "puppeteer": "^21.0.0"
+    "playwright-core": "^1.40.0",
+    "puppeteer": "^21.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
@@ -50,13 +53,6 @@
       "src/services/**/*",
       "node_modules/**/*"
     ],
-    "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "category": "public.app-category.productivity"
-    },
     "win": {
       "target": [
         "nsis",

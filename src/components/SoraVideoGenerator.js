@@ -1,15 +1,31 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Video, Key, X, Sparkles, RefreshCw, CheckCircle2, Download, Check, Monitor, Smartphone, Clock, Film, ChevronDown, User } from 'lucide-react';
-import '../styles/SoraVideoGenerator.css';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  ArrowLeft,
+  Video,
+  Key,
+  X,
+  Sparkles,
+  RefreshCw,
+  CheckCircle2,
+  Download,
+  Check,
+  Monitor,
+  Smartphone,
+  Clock,
+  Film,
+  ChevronDown,
+  User,
+} from "lucide-react";
+import "../styles/SoraVideoGenerator.css";
 
 /* ────── Option Pill Selector ────── */
 function OptionPills({ options, value, onChange, disabled, icon: Icon }) {
   return (
     <div className="option-pills">
-      {options.map(opt => (
+      {options.map((opt) => (
         <button
           key={opt.value}
-          className={`option-pill ${value === opt.value ? 'active' : ''}`}
+          className={`option-pill ${value === opt.value ? "active" : ""}`}
           onClick={() => !disabled && onChange(opt.value)}
           disabled={disabled}
           title={opt.description || opt.label}
@@ -24,36 +40,61 @@ function OptionPills({ options, value, onChange, disabled, icon: Icon }) {
 }
 
 /* ────── Custom Select Dropdown ────── */
-function CustomSelect({ options, value, onChange, disabled, placeholder, icon: Icon }) {
+function CustomSelect({
+  options,
+  value,
+  onChange,
+  disabled,
+  placeholder,
+  icon: Icon,
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const selected = options.find(o => o.value === value);
+  const selected = options.find((o) => o.value === value);
 
   return (
-    <div className={`custom-select ${open ? 'open' : ''} ${disabled ? 'disabled' : ''}`} ref={ref}>
-      <button className="custom-select-trigger" onClick={() => !disabled && setOpen(!open)}>
+    <div
+      className={`custom-select ${open ? "open" : ""} ${disabled ? "disabled" : ""}`}
+      ref={ref}
+    >
+      <button
+        className="custom-select-trigger"
+        onClick={() => !disabled && setOpen(!open)}
+      >
         {Icon && <Icon size={16} className="select-icon" />}
-        <span className="select-value">{selected ? selected.label : placeholder}</span>
-        <ChevronDown size={16} className={`select-chevron ${open ? 'rotated' : ''}`} />
+        <span className="select-value">
+          {selected ? selected.label : placeholder}
+        </span>
+        <ChevronDown
+          size={16}
+          className={`select-chevron ${open ? "rotated" : ""}`}
+        />
       </button>
       {open && (
         <div className="custom-select-dropdown">
-          {options.map(opt => (
+          {options.map((opt) => (
             <button
               key={opt.value}
-              className={`custom-select-option ${value === opt.value ? 'selected' : ''}`}
-              onClick={() => { onChange(opt.value); setOpen(false); }}
+              className={`custom-select-option ${value === opt.value ? "selected" : ""}`}
+              onClick={() => {
+                onChange(opt.value);
+                setOpen(false);
+              }}
             >
               {opt.icon && <opt.icon size={16} />}
               <span>{opt.label}</span>
-              {value === opt.value && <Check size={14} className="check-icon" />}
+              {value === opt.value && (
+                <Check size={14} className="check-icon" />
+              )}
             </button>
           ))}
         </div>
@@ -66,7 +107,10 @@ function CustomSelect({ options, value, onChange, disabled, placeholder, icon: I
 function ToggleSwitch({ checked, onChange, label }) {
   return (
     <label className="toggle-switch">
-      <div className={`toggle-track ${checked ? 'on' : ''}`} onClick={() => onChange(!checked)}>
+      <div
+        className={`toggle-track ${checked ? "on" : ""}`}
+        onClick={() => onChange(!checked)}
+      >
         <div className="toggle-thumb" />
       </div>
       <span className="toggle-label-text">{label}</span>
@@ -84,32 +128,35 @@ function SoraVideoGenerator({
   addProgress,
   onBack,
 }) {
-  const [characterId, setCharacterId] = useState('vuluu2k.thao');
-  const [resolution, setResolution] = useState('9:16');
-  const [duration, setDuration] = useState('10s');
-  const [videoCount, setVideoCount] = useState('1');
-  const [soraPrompt, setSoraPrompt] = useState('');
+  const [characterId, setCharacterId] = useState("vuluu2k.thao");
+  const [resolution, setResolution] = useState("9:16");
+  const [duration, setDuration] = useState("10s");
+  const [videoCount, setVideoCount] = useState("1");
+  const [soraPrompt, setSoraPrompt] = useState("");
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [submissionScreenshot, setSubmissionScreenshot] = useState(null);
   const [autoDownload, setAutoDownload] = useState(true);
   const [videoUrl, setVideoUrl] = useState(null);
-  const [downloadPath, setDownloadPath] = useState('');
-  const [error, setError] = useState('');
+  const [downloadPath, setDownloadPath] = useState("");
+  const [error, setError] = useState("");
   const [renderProgress, setRenderProgress] = useState(null);
 
   useEffect(() => {
-    const validResolutions = ['9:16', '16:9'];
-    const validDurations = ['10s', '15s'];
-    const validCounts = ['1', '2', '3'];
+    const validResolutions = ["9:16", "16:9"];
+    const validDurations = ["10s", "15s"];
+    const validCounts = ["1", "2", "3"];
     const loadConfig = async () => {
       try {
         const config = await window.electronAPI.loadConfig();
         if (config.characterId) setCharacterId(config.characterId);
-        if (config.resolution && validResolutions.includes(config.resolution)) setResolution(config.resolution);
-        if (config.duration && validDurations.includes(config.duration)) setDuration(config.duration);
-        if (config.videoCount && validCounts.includes(config.videoCount)) setVideoCount(config.videoCount);
+        if (config.resolution && validResolutions.includes(config.resolution))
+          setResolution(config.resolution);
+        if (config.duration && validDurations.includes(config.duration))
+          setDuration(config.duration);
+        if (config.videoCount && validCounts.includes(config.videoCount))
+          setVideoCount(config.videoCount);
       } catch (err) {
-        console.error('Error loading config:', err);
+        console.error("Error loading config:", err);
       }
     };
     loadConfig();
@@ -133,29 +180,30 @@ function SoraVideoGenerator({
           characterId,
           resolution,
           duration,
-          videoCount
+          videoCount,
         });
       } catch (err) {
-        console.error('Error saving config:', err);
+        console.error("Error saving config:", err);
       }
     };
     saveConfig();
   }, [characterId, resolution, duration, videoCount]);
 
   const handleGenerateSoraPrompt = async () => {
-    setError('');
+    setError("");
     setIsGeneratingPrompt(true);
-    addProgress('🎬 Đang tạo Sora prompt...');
+    addProgress("🎬 Đang tạo Sora prompt...");
 
     try {
       const content = `${tiktokData.title} - ${tiktokData.description} - Caption: ${caption}`;
       const result = await window.electronAPI.generateSoraPrompt(content);
 
+      console.log({ content, result });
       if (result.success) {
         setSoraPrompt(result.prompt);
-        addProgress('✓ Đã tạo Sora prompt');
+        addProgress("✓ Đã tạo Sora prompt");
       } else {
-        setError(result.error || 'Tạo prompt thất bại');
+        setError(result.error || "Tạo prompt thất bại");
         addProgress(`✗ Lỗi: ${result.error}`);
       }
     } catch (err) {
@@ -167,13 +215,13 @@ function SoraVideoGenerator({
   };
 
   const handleCreateVideo = async () => {
-    setError('');
+    setError("");
     setIsLoading(true);
     setSubmissionScreenshot(null);
     setVideoUrl(null);
-    setDownloadPath('');
+    setDownloadPath("");
     setRenderProgress(null);
-    addProgress('🎥 Đang bắt đầu quy trình tạo video Sora...');
+    addProgress("🎥 Đang bắt đầu quy trình tạo video Sora...");
 
     try {
       const submitResult = await window.electronAPI.createSoraVideo({
@@ -182,28 +230,28 @@ function SoraVideoGenerator({
         characterId,
         resolution,
         duration,
-        videoCount
+        videoCount,
       });
 
       if (submitResult.success) {
         if (submitResult.screenshot) {
           setSubmissionScreenshot(submitResult.screenshot);
-          addProgress('📸 Đã chụp ảnh xác nhận từ Sora');
+          addProgress("📸 Đã chụp ảnh xác nhận từ Sora");
         }
-        addProgress('✓ Đã gửi yêu cầu lên Sora. Đang chờ render...');
+        addProgress("✓ Đã gửi yêu cầu lên Sora. Đang chờ render...");
 
         const pollResult = await window.electronAPI.pollSoraResult();
 
         if (pollResult.success) {
           setVideoUrl(pollResult.videoUrl);
-          addProgress('✓ Video đã render xong!');
+          addProgress("✓ Video đã render xong!");
 
           if (autoDownload) {
-            addProgress('📥 Đang tự động tải video về máy...');
+            addProgress("📥 Đang tự động tải video về máy...");
             const filename = `tiktok_video_${Date.now()}.mp4`;
             const downloadResult = await window.electronAPI.downloadVideo({
               url: pollResult.videoUrl,
-              filename
+              filename,
             });
 
             if (downloadResult.success) {
@@ -216,8 +264,8 @@ function SoraVideoGenerator({
 
           // Save to history
           await window.electronAPI.saveHistory({
-            title: tiktokData.title || 'Video',
-            description: tiktokData.description || '',
+            title: tiktokData.title || "Video",
+            description: tiktokData.description || "",
             caption,
             prompt: soraPrompt,
             characterId,
@@ -228,20 +276,22 @@ function SoraVideoGenerator({
               ? pollResult.videoUrl
               : [pollResult.videoUrl].filter(Boolean),
             images: tiktokData.images || [],
-            imagePath: tiktokData.imagePath || '',
+            imagePath: tiktokData.imagePath || "",
             timestamp: new Date().toISOString(),
           });
 
           onVideoCreated();
         } else {
-          setError(pollResult.error || 'Lỗi khi chờ video render');
+          setError(pollResult.error || "Lỗi khi chờ video render");
           addProgress(`✗ Lỗi: ${pollResult.error}`);
         }
       } else if (submitResult.needLogin) {
-        setError('Phiên làm việc Sora đã hết hạn. Vui lòng nhấn nút "Đăng nhập Sora" bên dưới.');
-        addProgress('⚠️ Yêu cầu đăng nhập Sora để tiếp tục');
+        setError(
+          'Phiên làm việc Sora đã hết hạn. Vui lòng nhấn nút "Đăng nhập Sora" bên dưới.',
+        );
+        addProgress("⚠️ Yêu cầu đăng nhập Sora để tiếp tục");
       } else {
-        setError(submitResult.error || 'Gửi yêu cầu thất bại');
+        setError(submitResult.error || "Gửi yêu cầu thất bại");
         addProgress(`✗ Lỗi: ${submitResult.error}`);
       }
     } catch (err) {
@@ -263,33 +313,33 @@ function SoraVideoGenerator({
   const handleCloseBrowser = async () => {
     try {
       await window.electronAPI.closeSoraBrowser();
-      addProgress('ℹ️ Đã đóng trình duyệt');
+      addProgress("ℹ️ Đã đóng trình duyệt");
     } catch (err) {
       setError(`Lỗi khi đóng trình duyệt: ${err.message}`);
     }
   };
 
   const resolutionOptions = [
-    { value: '9:16', label: 'Dọc', sub: '9:16', icon: Smartphone },
-    { value: '16:9', label: 'Ngang', sub: '16:9', icon: Monitor },
+    { value: "9:16", label: "Dọc", sub: "9:16", icon: Smartphone },
+    { value: "16:9", label: "Ngang", sub: "16:9", icon: Monitor },
   ];
 
   const durationOptions = [
-    { value: '10s', label: '10s' },
-    { value: '15s', label: '15s' },
+    { value: "10s", label: "10s" },
+    { value: "15s", label: "15s" },
   ];
 
   const videoCountOptions = [
-    { value: '1', label: '1' },
-    { value: '2', label: '2' },
-    { value: '3', label: '3' },
+    { value: "1", label: "1" },
+    { value: "2", label: "2" },
+    { value: "3", label: "3" },
   ];
 
   const characterOptions = [
-    { value: 'vuluu2k.thao', label: '@vuluu2k.thao' },
-    { value: 'character_default', label: 'Default Character' },
-    { value: 'character_anime', label: 'Anime Style' },
-    { value: 'character_realistic', label: 'Realistic' },
+    { value: "vuluu2k.thao", label: "@vuluu2k.thao" },
+    { value: "character_default", label: "Default Character" },
+    { value: "character_anime", label: "Anime Style" },
+    { value: "character_realistic", label: "Realistic" },
   ];
 
   return (
@@ -310,25 +360,29 @@ function SoraVideoGenerator({
             <span className="label">Caption:</span>
             <span className="value">{caption}</span>
           </div>
-          <div className="summary-item" style={{ alignItems: 'center' }}>
+          <div className="summary-item" style={{ alignItems: "center" }}>
             <span className="label">Hình ảnh:</span>
             <span className="value">
-              {(tiktokData.images && tiktokData.images.length > 0) ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {tiktokData.images && tiktokData.images.length > 0 ? (
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "1rem" }}
+                >
                   <img
                     src={tiktokData.images[0]}
                     alt="Preview"
                     style={{
-                      width: '40px',
-                      height: '40px',
-                      objectFit: 'cover',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(37, 244, 238, 0.3)'
+                      width: "40px",
+                      height: "40px",
+                      objectFit: "cover",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(37, 244, 238, 0.3)",
                     }}
                   />
-                  <span style={{ color: '#25f4ee' }}>✓ Đã có ảnh</span>
+                  <span style={{ color: "#25f4ee" }}>✓ Đã có ảnh</span>
                 </div>
-              ) : '✗ Không có'}
+              ) : (
+                "✗ Không có"
+              )}
             </span>
           </div>
         </div>
@@ -418,9 +472,13 @@ function SoraVideoGenerator({
               className="generate-prompt-btn"
             >
               {isGeneratingPrompt ? (
-                <><span className="btn-spinner" /> Đang tạo...</>
+                <>
+                  <span className="btn-spinner" /> Đang tạo...
+                </>
               ) : (
-                <><Sparkles size={18} /> Tạo Smart Prompt</>
+                <>
+                  <Sparkles size={18} /> Tạo Smart Prompt
+                </>
               )}
             </button>
           ) : (
@@ -443,8 +501,8 @@ function SoraVideoGenerator({
           )}
           <p className="hint">
             {soraPrompt
-              ? 'Bạn có thể chỉnh sửa prompt hoặc tạo lại cái mới'
-              : 'Prompt chi tiết sẽ được tự động tạo cho Sora'}
+              ? "Bạn có thể chỉnh sửa prompt hoặc tạo lại cái mới"
+              : "Prompt chi tiết sẽ được tự động tạo cho Sora"}
           </p>
         </div>
 
@@ -461,7 +519,9 @@ function SoraVideoGenerator({
           <div className="render-progress-panel">
             <div className="render-progress-header">
               <div className="render-progress-pulse"></div>
-              <span className="render-progress-status">{renderProgress.status}</span>
+              <span className="render-progress-status">
+                {renderProgress.status}
+              </span>
             </div>
             {renderProgress.detail && (
               <p className="render-progress-detail">{renderProgress.detail}</p>
@@ -472,14 +532,22 @@ function SoraVideoGenerator({
         {/* Submission Verification */}
         {submissionScreenshot && (
           <div className="submission-verification">
-            <h4><CheckCircle2 size={16} color="#25f4ee" /> Xác nhận đã gửi tới Sora</h4>
+            <h4>
+              <CheckCircle2 size={16} color="#25f4ee" /> Xác nhận đã gửi tới
+              Sora
+            </h4>
             <p>Video của bạn đang được xử lý với prompt bên dưới:</p>
             <div className="active-prompt-display">
               <code>{soraPrompt || caption}</code>
             </div>
             <div className="screenshot-container">
-              <img src={`file://${submissionScreenshot}`} alt="Sora Confirmation" />
-              <div className="screenshot-overlay">Ảnh chụp màn hình từ Sora</div>
+              <img
+                src={`file://${submissionScreenshot}`}
+                alt="Sora Confirmation"
+              />
+              <div className="screenshot-overlay">
+                Ảnh chụp màn hình từ Sora
+              </div>
             </div>
 
             <div className="auto-download-control">
@@ -492,14 +560,20 @@ function SoraVideoGenerator({
 
             {videoUrl && (
               <div className="result-display fade-in">
-                <div className="success-badge"><Check size={14} /> Render thành công</div>
+                <div className="success-badge">
+                  <Check size={14} /> Render thành công
+                </div>
                 {downloadPath ? (
                   <div className="download-path">
-                    <Download size={14} /> Đã lưu tại: <code>{downloadPath}</code>
+                    <Download size={14} /> Đã lưu tại:{" "}
+                    <code>{downloadPath}</code>
                   </div>
                 ) : (
                   <div className="video-link">
-                    Link video: <a href={videoUrl} target="_blank" rel="noreferrer">Tại đây</a>
+                    Link video:{" "}
+                    <a href={videoUrl} target="_blank" rel="noreferrer">
+                      Tại đây
+                    </a>
                   </div>
                 )}
               </div>
@@ -515,9 +589,13 @@ function SoraVideoGenerator({
             className="create-video-btn"
           >
             {isLoading ? (
-              <><span className="btn-spinner" /> Đang tạo video...</>
+              <>
+                <span className="btn-spinner" /> Đang tạo video...
+              </>
             ) : (
-              <><Video size={20} /> Tạo Video với Sora</>
+              <>
+                <Video size={20} /> Tạo Video với Sora
+              </>
             )}
           </button>
 
@@ -543,8 +621,8 @@ function SoraVideoGenerator({
 
         <div className="info-note">
           <p>
-            ℹ️ Trình duyệt sẽ mở trang Sora. Vui lòng làm theo hướng dẫn để
-            hoàn tất tạo video. Bạn có thể cần đăng nhập vào tài khoản của mình.
+            ℹ️ Trình duyệt sẽ mở trang Sora. Vui lòng làm theo hướng dẫn để hoàn
+            tất tạo video. Bạn có thể cần đăng nhập vào tài khoản của mình.
           </p>
         </div>
       </div>
